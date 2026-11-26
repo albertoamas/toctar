@@ -160,6 +160,17 @@ La etiqueta a la izquierda y el valor a la derecha, con `ListaDatos`, para que l
 | `MenuMas`, `Insignia`, `EstadoVacio` | Acciones poco usadas, estados y vacíos | Existen |
 | `Alerta` | Lo que pide hacer algo: la insignia ámbar (o roja) con su ícono | Existe desde el 23/11 |
 
+## 7a. Pasos: elegir y confirmar (24/11)
+
+En todo flujo de pasos (Nueva cotización, Nueva reserva, cambio de dueño), elegir algo que ya existe es **marcar y
+confirmar**: tocar una tarjeta la marca con su tilde y no avanza sola; **«Siguiente»** confirma, siempre en el pie fijo,
+con «Atrás» al lado y fuera de la tarjeta, pegado abajo de la pantalla mientras se baja (también en la computadora), y en
+gris hasta que se elige una. Las mismas tarjetas en todos (`ListaConNuevo`; en una página sola, `TarjetasParaElegir`),
+con un renglón que ayuda a elegir (el cliente, su WhatsApp; la placa solo si la búsqueda la encontró), y «Cliente nuevo»
+u «Otro vehículo» punteado **arriba**, debajo del buscador. Al marcarlo, **sus campos se abren ahí mismo, dentro de su
+tarjeta** (sin ir a otra pantalla ni un botón para volver a buscar); lo escrito queda si se marca otra y se vuelve. Sin
+buscar, los 8 clientes más recientes. Con una sola opción, ya viene marcada.
+
 ## 7b. Estados y alertas: un color, un significado (23/11)
 
 Todo estado va en una **insignia** (`Insignia`, la píldora con fondo) y todo lo que pide hacer algo, en una **alerta**

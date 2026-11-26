@@ -1,5 +1,5 @@
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
-import { consultar, crearClienteEnBase, crearCotizacionEnBase, crearUsuario, ingresar, ingresarComoDueno, PERFIL_TALLER, PNG, sinAdelantoEnReserva } from "./apoyo";
+import { consultar, crearClienteEnBase, crearCotizacionEnBase, crearUsuario, ingresar, ingresarComoDueno, PERFIL_TALLER, PNG, sinAdelantoEnReserva, marcarNuevo } from "./apoyo";
 
 // Cotización directa (pedido 23, flujo crítico 1; antes HU-24 y HU-25). Especificación:
 // docs/08-desarrollo/etapas/P23-cotizacion-directa.md §9. Cada proyecto (celular o escritorio) crea su propio servicio
@@ -61,8 +61,9 @@ test("alguien nuevo en tres pasos: nombre y WhatsApp, la placa, el tamaño y la 
   await page.getByRole("link", { name: "Nueva cotización" }).click();
   // Paso 1: el cliente; buscarlo o uno nuevo
   await expect(pasoActual(page)).toContainText("Cliente");
-  await page.getByRole("link", { name: "Cliente nuevo" }).click();
-  await expect(page.getByRole("group", { name: "Cliente nuevo" })).toBeVisible();
+  // "Cliente nuevo" se llena ahí mismo, dentro de su tarjeta (24/11)
+  await marcarNuevo(page, "Elegir cliente");
+  await expect(page.getByLabel("Nombre", { exact: true })).toBeVisible();
   await expect(pasoActual(page)).toContainText("Cliente");
 
   // Vacío: los errores del cliente, sin pasar al vehículo; el foco, al primero
@@ -131,7 +132,7 @@ test("alguien nuevo en tres pasos: nombre y WhatsApp, la placa, el tamaño y la 
   // El desglose, en el recuadro del descuento y, en la computadora, también en el resumen del costado (C7 §5.2)
   const totales = page.locator("dl").filter({ hasText: "Subtotal" }).first();
   await expect(totales).toContainText("650,50 Bs");
-  // El total: arriba en "Total y condiciones" en el celular; al costado, en el resumen, en la computadora
+  // El total, una sola vez (24/11): en el pie en el celular; al costado, en el resumen, en la computadora
   await expect(page.getByRole("main").getByText("600,50 Bs", { exact: true }).locator("visible=true").first()).toBeVisible();
   await crear(page);
 
@@ -336,7 +337,8 @@ test("nueva versión: el mismo número, la anterior queda reemplazada y una viej
   await page.getByRole("button", { name: "Más" }).click();
   await page.getByRole("menuitem", { name: "Nueva versión" }).click();
   await expect(page).toHaveURL(new RegExp(`/panel/cotizaciones/${id}/nueva-version\\?desde=\\d+(?:[?&]volver=[^&#]*)?$`));
-  await expect(page.getByRole("heading", { level: 1, name: "Versión 2" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Nueva versión" })).toBeVisible();
+  await expect(page.getByText(/será la versión 2/)).toBeVisible();
   // Arranca con lo de la versión 1, también cómo se cotizó
   await expect(precio(page, 1)).toHaveValue("450");
   await expect(page.getByRole("radio", { name: /^Por fotos/ })).toBeChecked();
@@ -372,7 +374,7 @@ test("nueva versión: el mismo número, la anterior queda reemplazada y una viej
   for (const desde of ["", "?desde=999999"]) {
     await page.goto(`/panel/cotizaciones/${id}/nueva-version${desde}`);
     await expect(page).toHaveURL(new RegExp(`desde=${versiones[1].id}$`));
-    await expect(page.getByRole("heading", { level: 1, name: "Versión 3" })).toBeVisible();
+    await expect(page.getByText(/será la versión 3/)).toBeVisible();
   }
 });
 
@@ -395,8 +397,12 @@ test("el descuento no pasa el subtotal, el adelanto no pasa el total y la valide
   await expect(page.getByLabel("Monto del descuento")).toBeFocused();
 
   await page.getByLabel("Monto del descuento").fill("");
-  // Siempre a la vista (hallazgo 8), con lo que va al PDF: el adelanto de Configuración y la validez
-  await expect(page.getByLabel("Adelanto sugerido")).toHaveValue(/^\d+/);
+  // Siempre a la vista (hallazgo 8), con lo que va al PDF: el adelanto de Configuración y la validez, en una línea con
+  // sus valores (24/11); «Cambiar» abre sus campos
+  const condiciones = page.getByRole("group", { name: "Condiciones" });
+  await expect(condiciones).toContainText(/Adelanto sugerido \d+/);
+  await expect(condiciones).toContainText(/Vale hasta el \d+ \w+/);
+  await condiciones.getByRole("button", { name: "Cambiar el adelanto o la validez" }).click();
   await expect(page.getByLabel("Válida hasta")).toHaveValue(/^\d{4}-\d{2}-\d{2}$/);
   await page.getByLabel("Adelanto sugerido").fill("451");
   await crear(page);

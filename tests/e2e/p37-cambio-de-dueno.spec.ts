@@ -1,5 +1,5 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import { consultar, crearClienteEnBase, crearCotizacionEnBase, ingresarComoDueno } from "./apoyo";
+import { consultar, crearClienteEnBase, crearCotizacionEnBase, ingresarComoDueno, elegirEnLista } from "./apoyo";
 
 // Pedido 37: un vehículo cambia de dueño (etapas/P37-cambio-de-dueno.md §9). Pasa el mismo vehículo, con su plan de
 // mantenimiento; las cotizaciones abiertas del anterior se cierran y lo suyo queda a su nombre. En serie: las del dueño
@@ -61,9 +61,9 @@ test("desde la ficha del vehículo: pasa al comprador con su mantenimiento y se 
   // Se elige al comprador con el buscador de Clientes
   // (el dueño actual no se ofrece)
   await page.goto(`${new URL(page.url()).pathname}?q=${encodeURIComponent(d.anterior)}`);
-  await expect(page.getByRole("list", { name: "Elegir cliente" })).toHaveCount(0);
+  await expect(page.getByRole("radiogroup", { name: "Elegir cliente" }).getByRole("radio")).toHaveCount(0);
   await page.goto(`${new URL(page.url()).pathname}?q=${encodeURIComponent(d.nuevo)}`);
-  await page.getByRole("list", { name: "Elegir cliente" }).getByRole("link").filter({ hasText: d.nuevo }).click();
+  await elegirEnLista(page, "Elegir cliente", new RegExp(d.nuevo));
   // El vehículo en su tarjeta y, en lo que pasa, a quién (cambio 4c: "De … a …" iba en el encabezado)
   await expect(page.getByRole("region", { name: "Vehículo" })).toContainText(d.placa);
   await expect(page.locator('dt:text-is("Nuevo dueño") + dd')).toHaveText(d.nuevo);

@@ -1,5 +1,5 @@
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
-import { consultar, crearClienteEnBase, crearOrdenLista, crearUsuario, ingresar, ingresarComoDueno } from "./apoyo";
+import { consultar, crearClienteEnBase, crearOrdenLista, crearUsuario, ingresar, ingresarComoDueno, elegirEnLista } from "./apoyo";
 
 // Pedido 43: "Volver" lleva a la pantalla de la que se vino. Especificación: docs/08-desarrollo/etapas/P43-volver-al-origen.md §9.
 
@@ -74,7 +74,7 @@ test("Nueva reserva desde la ficha del cliente vuelve a ella y lleva el origen e
   await page.getByRole("link", { name: "Nueva reserva" }).click();
   await expect(volverA(page, "Cliente")).toHaveAttribute("href", `/panel/clientes/${clienteId}`);
   // Elegido el vehículo (siempre se elige, 20/11), en Servicios está el formulario, con el origen para la reserva creada
-  await page.getByRole("list", { name: "Elegir vehículo" }).getByRole("link", { name: new RegExp(`^${placa}`) }).click();
+  await elegirEnLista(page, "Elegir vehículo", new RegExp(`^${placa}`));
   await expect(volverA(page, "Cliente")).toHaveAttribute("href", `/panel/clientes/${clienteId}`);
   await expect(page.locator('form input[name="volver"]')).toHaveValue(`/panel/clientes/${clienteId}`);
 });

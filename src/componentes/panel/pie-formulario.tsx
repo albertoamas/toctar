@@ -1,5 +1,6 @@
 "use client";
 
+import { cn } from "cn";
 import { useEffect, useRef } from "react";
 import { CELULAR } from "./celular";
 
@@ -14,7 +15,7 @@ import { CELULAR } from "./celular";
 // estirar al final de la página, el rebote del iPhone movía la posición cuadro a cuadro, el pie cambiaba el alto de la
 // página en pleno rebote y la página "tironeaba" contra el dedo. Desde que está siempre fijo abajo, lo que ocupa es su alto.
 
-export function PieFormulario({ children }: { children: React.ReactNode }) {
+export function PieFormulario({ children, pegado = false }: { children: React.ReactNode; /** En los flujos de pasos: pegado abajo también en la computadora mientras se baja (24/11). */ pegado?: boolean }) {
   const pie = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const raiz = document.documentElement;
@@ -58,7 +59,12 @@ export function PieFormulario({ children }: { children: React.ReactNode }) {
       <div
         ref={pie}
         data-pie-movil
-        className="flex flex-wrap gap-2 max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:z-30 max-sm:border-t max-sm:border-border max-sm:bg-background max-sm:px-4 max-sm:pt-3 max-sm:pb-[calc(0.75rem+env(safe-area-inset-bottom))]"
+        className={cn(
+          "flex flex-wrap gap-2 max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:z-30 max-sm:border-t max-sm:border-border max-sm:bg-background max-sm:px-4 max-sm:pt-3 max-sm:pb-[calc(0.75rem+env(safe-area-inset-bottom))]",
+          // En la computadora, en un flujo de pasos: pegado abajo mientras se baja (con una lista larga, "Siguiente" quedaba al
+          // final); con el contenido corto, queda justo debajo
+          pegado && "sm:sticky sm:bottom-0 sm:z-20 sm:-mx-1 sm:border-t sm:border-border sm:bg-fondo-panel sm:px-1 sm:py-3",
+        )}
       >
         {children}
       </div>

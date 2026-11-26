@@ -1,5 +1,5 @@
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
-import { alAdelanto, consultar, crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno, PNG, conVolver, sinAdelantoEnReserva } from "./apoyo";
+import { alAdelanto, consultar, crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno, PNG, conVolver, sinAdelantoEnReserva, elegirEnLista, marcarNuevo } from "./apoyo";
 
 // HU-30 Agendar reserva (flujo crítico 2). Especificación: docs/08-desarrollo/etapas/C3-agenda-pagos.md §9.
 // Cada prueba usa sus propios días (lejos de hoy y distintos por proyecto) para no chocar con las demás en los
@@ -155,15 +155,20 @@ test("reserva directa: cliente y vehículo registrados, servicio del catálogo c
   // La búsqueda va a la dirección (?q=) un momento después de escribir y la lista se vuelve a armar: un toque antes de
   // eso caía en la lista vieja y se perdía (CI del PR #95). Se toca cuando la búsqueda ya está aplicada
   await expect(page).toHaveURL(new RegExp(`q=DI30${s}6`));
-  const elegir = page.getByRole("list", { name: "Elegir cliente" });
-  await expect(elegir.getByRole("link")).toHaveCount(1);
-  await elegir.getByRole("link", { name: new RegExp(`Directa ${s}`) }).click();
+  const elegir = page.getByRole("radiogroup", { name: "Elegir cliente" });
+  await expect(elegir.getByRole("radio", { name: new RegExp(`Directa ${s}`) })).toHaveCount(1);
+  // Tocar marca, sin avanzar (24/11): "Siguiente" confirma
+  await elegir.getByRole("radio", { name: new RegExp(`Directa ${s}`) }).click();
+  await expect(pasoActual(page)).toHaveText("Cliente");
+  await page.getByRole("button", { name: "Siguiente: vehículo" }).click();
   await expect(page).toHaveURL(new RegExp(`cliente=${clienteId}`));
   // El vehículo siempre se elige, también con uno solo (20/11): en tarjetas, con "Otro vehículo" para registrar uno
   await expect(pasoActual(page)).toHaveText("Vehículo");
-  const vehiculos = page.getByRole("list", { name: "Elegir vehículo" });
-  await expect(vehiculos.getByRole("link", { name: /^Otro vehículo/ })).toBeVisible();
-  await vehiculos.getByRole("link", { name: new RegExp(`^DI30${s}6`) }).click();
+  const vehiculos = page.getByRole("radiogroup", { name: "Elegir vehículo" });
+  await expect(vehiculos.getByRole("radio", { name: /^Otro vehículo/ })).toBeVisible();
+  // Con uno solo, ya viene marcado: basta con "Siguiente"
+  await expect(vehiculos.getByRole("radio", { name: new RegExp(`^DI30${s}6`) })).toHaveAttribute("aria-checked", "true");
+  await page.getByRole("button", { name: "Siguiente: servicios" }).click();
   await expect(pasoActual(page)).toHaveText("Servicios");
   // El cliente y su vehículo, en una sola tarjeta (pulido final del 09/11)
   await expect(page.getByRole("region", { name: "Reserva para" })).toContainText(`Directa ${s}`);
@@ -268,7 +273,7 @@ test("con varios vehículos se elige uno en su paso, y «Cambiar vehículo» vue
   await expect(pasoActual(page)).toHaveText("Cliente");
   await page.goto(`/panel/agenda/nueva?cliente=${clienteId}`);
   await expect(pasoActual(page)).toHaveText("Vehículo");
-  await page.getByRole("list", { name: "Elegir vehículo" }).getByRole("link", { name: new RegExp(`DB30${s}0`) }).click();
+  await elegirEnLista(page, "Elegir vehículo", new RegExp(`DB30${s}0`));
   await expect(page).toHaveURL(new RegExp(`vehiculo=${segundo}$`));
   await expect(pasoActual(page)).toHaveText("Servicios");
   await expect(page.getByRole("region", { name: "Reserva para" })).toContainText(`DB30${s}0`);
@@ -284,11 +289,12 @@ test("otro vehículo se escribe en su paso y se registra con la reserva, no ante
   await ingresarComoDueno(page);
   await page.goto(`/panel/agenda/nueva?cliente=${clienteId}`);
   await expect(pasoActual(page)).toHaveText("Vehículo");
-  const vehiculos = page.getByRole("list", { name: "Elegir vehículo" });
+  const vehiculos = page.getByRole("radiogroup", { name: "Elegir vehículo" });
   // Sin vehículos, solo "Otro vehículo": sus datos van en el paso siguiente, como en Nueva cotización
-  await expect(vehiculos.getByRole("link")).toHaveCount(1);
-  await vehiculos.getByRole("link", { name: /^Otro vehículo/ }).click();
-  await expect(page.getByRole("group", { name: "Otro vehículo" })).toBeVisible();
+  await expect(vehiculos.getByRole("radio")).toHaveCount(1);
+  // Ya marcado (no tiene otro), con sus campos abiertos ahí mismo (24/11)
+  await expect(vehiculos.getByRole("radio", { name: /^Otro vehículo/ })).toHaveAttribute("aria-checked", "true");
+  await expect(page.getByLabel("Placa", { exact: true })).toBeVisible();
   await expect(pasoActual(page)).toHaveText("Vehículo");
   await expect(page.getByRole("region", { name: "Reserva para" })).toContainText(`Sin auto ${s}`);
   // Vacío no pasa: dice qué falta
@@ -326,10 +332,9 @@ test("«Cliente nuevo» se escribe en los pasos de la reserva y se registra con 
   const dia = await diaPropio(info, 12);
   await ingresarComoDueno(page);
   await page.goto(`/panel/agenda/nueva?fecha=${dia}`);
-  await page.getByRole("link", { name: "Cliente nuevo" }).click();
-  // En la misma pantalla, como en Nueva cotización
-  await expect(page).toHaveURL(/\/panel\/agenda\/nueva\?.*nuevo=1/);
-  await expect(page.getByRole("group", { name: "Cliente nuevo" })).toBeVisible();
+  await marcarNuevo(page, "Elegir cliente");
+  // Ahí mismo, dentro de su tarjeta (24/11), como en Nueva cotización
+  await expect(page.getByLabel("Nombre", { exact: true })).toBeVisible();
   await expect(pasoActual(page)).toHaveText("Cliente");
   await page.getByRole("button", { name: "Siguiente: vehículo" }).click();
   await expect(page.getByText("Escribe el nombre.")).toBeVisible();

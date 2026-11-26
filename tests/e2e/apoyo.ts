@@ -359,3 +359,16 @@ export async function sinAdelantoEnReserva(page: Page) {
   await page.getByRole("radio", { name: "No, sin adelanto" }).click();
 }
 
+/**
+ * Elige de una lista de un flujo de pasos (24/11: "elegir y confirmar"): marca la tarjeta y toca "Siguiente". Para el
+ * cliente y el vehículo de Nueva reserva y Nueva cotización, y el nuevo dueño de un vehículo.
+ */
+export async function elegirEnLista(page: Page, etiqueta: "Elegir cliente" | "Elegir vehículo", opcion: string | RegExp) {
+  await page.getByRole("radiogroup", { name: etiqueta }).getByRole("radio", { name: opcion }).click();
+  await page.getByRole("button", { name: /^Siguiente/ }).filter({ visible: true }).click();
+}
+
+/** Marca "Cliente nuevo" u "Otro vehículo" (24/11): sus campos se abren ahí mismo, dentro de su tarjeta. */
+export async function marcarNuevo(page: Page, etiqueta: "Elegir cliente" | "Elegir vehículo") {
+  await page.getByRole("radiogroup", { name: etiqueta }).getByRole("radio", { name: etiqueta === "Elegir cliente" ? /^Cliente nuevo/ : /^Otro vehículo/ }).click();
+}

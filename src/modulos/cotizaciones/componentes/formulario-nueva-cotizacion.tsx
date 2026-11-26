@@ -4,8 +4,9 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { usePasosEnHistorial } from "@/componentes/panel/pasos-en-historial";
 import { useFocoDePaso } from "@/componentes/panel/foco-de-paso";
 import Link from "next/link";
-import { SearchIcon } from "lucide-react";
-import { OpcionesEnTarjetas } from "@/componentes/panel/opciones-en-tarjetas";
+import { GRIS_SIN_ELEGIR, ListaConNuevo, NUEVO } from "@/componentes/panel/lista-con-nuevo";
+import { Buscador } from "@/componentes/panel/buscador";
+import { useRouter } from "next/navigation";
 import { MensajeError } from "@/componentes/panel/campo";
 import { PasosFlujo } from "@/componentes/panel/pasos-flujo";
 import { ParaQuien } from "@/componentes/panel/para-quien";
@@ -59,6 +60,10 @@ type Props = {
   hoy: string;
   /** La pantalla de origen (pedido 43): va en el formulario y la cotización creada vuelve ahí. */
   volver?: string | null;
+  /** Sin cliente elegido (24/11): la lista para elegirlo, con "Cliente nuevo" que se llena ahí mismo, y su nota. */
+  clientes?: { opciones: { id: number; titulo: string; detalle: string }[]; nota: string | null };
+  /** "Cliente nuevo" ya marcado (llega con ?nuevo=1). */
+  nuevoMarcado?: boolean;
 };
 
 const CAMPO_TAMANO = `${PREFIJO_VEHICULO}tamanoId`;
@@ -74,8 +79,11 @@ function sugerido(opciones: OpcionServicio[] | null, varianteId: number): string
   return o?.sugerencia.tipo === "monto" ? mostrarMonto(o.sugerencia.monto) : "";
 }
 
-export function FormularioNuevaCotizacion({ cliente, tamanos, catalogo, opciones, inicio, hoy, volver }: Props) {
+export function FormularioNuevaCotizacion({ cliente, tamanos, catalogo, opciones, inicio, hoy, volver, clientes, nuevoMarcado }: Props) {
   const clienteNuevo = !cliente;
+  const router = useRouter();
+  // En el paso del cliente: el marcado de la lista (uno registrado o NUEVO); "Siguiente" lo confirma
+  const [quien, setQuien] = useState<string | null>(nuevoMarcado ? NUEVO : null);
   const primerPaso = clienteNuevo ? PASO_CLIENTE : PASO_VEHICULO;
   const [paso, setPaso] = useState(primerPaso);
   // El paso a la vista, para los que escuchan el historial (sin esperar al próximo dibujo)
@@ -161,9 +169,10 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, catalogo, opciones
   // Controlados, y su valor viaja en un campo oculto propio: React reinicia el formulario al terminar la acción y el
   // campo interno de los radios de base-ui quedaba vacío tras un error, aunque la opción se siguiera viendo marcada
   const conVehiculos = !!cliente && cliente.vehiculos.length > 0;
-  const [vehiculo, setVehiculo] = useState(v.vehiculo ?? (cliente?.vehiculos.length === 1 ? String(cliente.vehiculos[0].id) : ""));
+  const [vehiculo, setVehiculo] = useState(
+    v.vehiculo ?? (cliente?.vehiculos.length === 1 ? String(cliente.vehiculos[0].id) : cliente && cliente.vehiculos.length === 0 ? VEHICULO_OTRO : ""),
+  );
   const [tamanoNuevo, setTamanoNuevo] = useState(v[CAMPO_TAMANO] ?? "");
-  const vehiculoNuevo = !conVehiculos || vehiculo === VEHICULO_OTRO;
   const precios = usePrecios({ lineas: [], descuento: "0.00", adelanto: inicio.adelanto, validaHasta: inicio.validaHasta, modo: "" });
 
   const tamanoDe = (eleccion: string, nuevo: string) =>
@@ -280,29 +289,33 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, catalogo, opciones
       )}
 
       <div data-paso={PASO_CLIENTE} hidden={paso !== PASO_CLIENTE} className="flex flex-col gap-3">
+        {/* La lista de clientes con "Cliente nuevo" que se llena ahí mismo (24/11): sin otra pantalla ni "Buscar un cliente
+            registrado" */}
         {clienteNuevo && (
-          <>
-            {/* El título adentro, con "Buscar un cliente registrado" al lado (sistema-del-panel.md §2, 18/11) */}
-            <SeccionFormulario
-              titulo="Cliente nuevo"
-              accion={
-                <Link href={conDesde("/panel/cotizaciones/nueva", volver)} className={buttonVariants({ variant: "accion" })}>
-                  <SearchIcon />
-                  Buscar un cliente registrado
-                </Link>
-              }
-              claseContenido="gap-6"
-            >
-              {/* Sin registrarlo (P31b): solo nombre y WhatsApp; el resto, si vuelve a reservar */}
-              <CamposCliente estado={vista} compacto enlaceExistente={usarExistente} />
-            </SeccionFormulario>
-          </>
+          <ListaConNuevo
+            id="cliente"
+            titulo="Cliente"
+            encima={
+              <div className="px-4 pt-4 sm:px-5">
+                <Buscador />
+              </div>
+            }
+            debajo={clientes?.nota && <p className="border-t border-border px-4 py-3 text-sm text-tinta-suave">{clientes.nota}</p>}
+            etiqueta="Elegir cliente"
+            opciones={(clientes?.opciones ?? []).map((c) => ({ clave: String(c.id), titulo: c.titulo, detalle: c.detalle }))}
+            nuevo={{ titulo: "Cliente nuevo", detalle: "Registrar a alguien que todavía no está" }}
+            elegida={quien}
+            alElegir={setQuien}
+          >
+            {/* Sin registrarlo (P31b): solo nombre y WhatsApp; el resto, si vuelve a reservar */}
+            <CamposCliente estado={vista} compacto enlaceExistente={usarExistente} />
+          </ListaConNuevo>
         )}
       </div>
 
       <div data-paso={PASO_VEHICULO} hidden={paso !== PASO_VEHICULO}>
-        <SeccionFormulario titulo={clienteNuevo ? "Vehículo" : vehiculoNuevo ? (conVehiculos ? "Otro vehículo" : "Vehículo nuevo") : "Vehículo"} claseContenido="gap-4">
-          {clienteNuevo && (
+        {clienteNuevo ? (
+        <SeccionFormulario titulo="Vehículo" claseContenido="gap-4">
             <CamposVehiculoInteresado
               estado={vista}
               enlaceExistente={usarExistente}
@@ -315,31 +328,24 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, catalogo, opciones
               }}
               foto={foto}
             />
-          )}
-          {/* En tarjetas apiladas que se tocan enteras, como los demás selectores del panel (19/11): la placa y, debajo,
-              sus datos y su tamaño. Con su propio campo oculto ("vehiculo") */}
-          {conVehiculos && (
-            <OpcionesEnTarjetas
-              id="vehiculo"
-              titulo="Vehículo"
-              tituloOculto
-              nombre="vehiculo"
-              valor={vehiculo}
-              cambiar={(valor) => {
-                cambiarTamano(valor, tamanoNuevo);
-                setVehiculo(valor);
-              }}
-              opciones={[
-                ...cliente.vehiculos.map((ve) => ({ valor: String(ve.id), texto: ve.placa, detalle: [...ve.detalle, `Tamaño: ${ve.tamano}`].join(" · ") })),
-                { valor: VEHICULO_OTRO, texto: "Otro vehículo", detalle: "Registrar uno nuevo" },
-              ]}
-              error={e.vehiculo}
-              className="grid-cols-1"
-            />
-          )}
-          {vehiculoNuevo && !clienteNuevo && (
-            <>
-              {!conVehiculos && <input type="hidden" name="vehiculo" value={VEHICULO_OTRO} />}
+        </SeccionFormulario>
+        ) : (
+          // Sus vehículos con "Otro vehículo" que se llena ahí mismo (24/11), como el cliente. Con su campo oculto
+          <ListaConNuevo
+            id="vehiculo"
+            titulo="Vehículo"
+            etiqueta="Elegir vehículo"
+            opciones={cliente.vehiculos.map((ve) => ({ clave: String(ve.id), titulo: ve.placa, esPlaca: true, detalle: [...ve.detalle, `Tamaño: ${ve.tamano}`].join(" · ") }))}
+            nuevo={{ titulo: "Otro vehículo", detalle: "Registrar uno nuevo" }}
+            elegida={vehiculo === VEHICULO_OTRO ? NUEVO : vehiculo || null}
+            alElegir={(clave) => {
+              const valor = clave === NUEVO ? VEHICULO_OTRO : clave;
+              cambiarTamano(valor, tamanoNuevo);
+              setVehiculo(valor);
+            }}
+            conError={!!e.vehiculo}
+          >
+            <input type="hidden" name="vehiculo" value={vehiculo} />
               {/* Completo: placa y tamaño, y marca, modelo, año y color a la vista (pedido 40) */}
               <CamposVehiculo
                 estado={vista}
@@ -353,23 +359,23 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, catalogo, opciones
                   setTamanoNuevo(t);
                 }}
               />
-            </>
-          )}
-        </SeccionFormulario>
+          </ListaConNuevo>
+        )}
+        {e.vehiculo && <MensajeError id="vehiculo-error">{e.vehiculo}</MensajeError>}
       </div>
 
       <div data-paso={PASO_SERVICIOS} hidden={paso !== PASO_SERVICIOS} className="flex flex-col gap-6">
         <ConResumen
           etiqueta="Resumen de la cotización"
           // Lo elegido y el total en una sola tarjeta, con su título adentro (sistema-del-panel.md §2, 18/11)
-          resumen={cotizacionPara("cotizacion-para-lateral", <ResumenPrecios precios={precios} />)}
+          resumen={cotizacionPara("cotizacion-para-lateral", <ResumenPrecios precios={precios} opciones={delTamano(tamanoId)} />)}
         >
           <CamposPrecio precios={precios} opciones={delTamano(tamanoId)} errores={e} hoy={hoy} />
         </ConResumen>
       </div>
 
       <AvisoAlSalir formulario={formulario} estado={estado} ademas={!!foto.vista} />
-      <PieFormulario>
+      <PieFormulario pegado>
         <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-2">
           {paso === PASO_SERVICIOS && <TotalEnPie total={precios.totales.total} />}
           <div className="flex gap-2">
@@ -390,8 +396,16 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, catalogo, opciones
               <Button
                 key="siguiente"
                 type="button"
+                // En gris hasta que se elige (24/11): el cliente (uno registrado o "Cliente nuevo") y el vehículo
+                disabled={(paso === PASO_CLIENTE && clienteNuevo && !quien) || (paso === PASO_VEHICULO && !clienteNuevo && !vehiculo)}
+                className={GRIS_SIN_ELEGIR}
                 onClick={(ev) => {
                   ev.preventDefault();
+                  // Uno registrado: su cotización empieza en el vehículo, con sus datos
+                  if (paso === PASO_CLIENTE && clienteNuevo && quien && quien !== NUEVO) {
+                    router.push(conDesde(`/panel/cotizaciones/nueva?cliente=${quien}`, volver));
+                    return;
+                  }
                   siguiente();
                 }}
               >

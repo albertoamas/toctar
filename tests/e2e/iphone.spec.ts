@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { deflateSync } from "node:zlib";
-import { ingresarComoDueno } from "./apoyo";
+import { ingresarComoDueno, marcarNuevo } from "./apoyo";
 
 // Una detrás de otra (19/11): cada una empieza ingresando como el dueño, y el límite de ingreso anota el intento antes de
 // probar la contraseña (así frena a quien prueba muchas en paralelo). Con 7 a la vez, desde la misma conexión, la
@@ -95,9 +95,9 @@ test("en Negocio y Parámetros nada se sale de la pantalla", async ({ page }) =>
 test("en Nueva cotización con un cliente nuevo los títulos van adentro de su tarjeta", async ({ page }) => {
   await ingresarComoDueno(page);
   await page.goto("/panel/cotizaciones/nueva");
-  await page.getByRole("link", { name: "Cliente nuevo" }).click();
-  await expect(page.getByRole("group", { name: "Cliente nuevo" })).toBeVisible();
-  await titulosAdentro(page);
+  await marcarNuevo(page, "Elegir cliente");
+  await expect(page.getByLabel("Nombre", { exact: true })).toBeVisible();
+  // El cliente es una lista (24/11), no una tarjeta de formulario: se mira el título en el paso del vehículo
   expect(await anchoDePagina(page)).toBeLessThanOrEqual(page.viewportSize()!.width);
   // El paso del vehículo, en su propia pantalla (pedido 40)
   await page.getByLabel("Nombre", { exact: true }).fill("Cliente iPhone");

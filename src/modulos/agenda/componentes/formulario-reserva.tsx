@@ -8,7 +8,7 @@ import { usePasosEnHistorial } from "@/componentes/panel/pasos-en-historial";
 import { useFocoDePaso } from "@/componentes/panel/foco-de-paso";
 import { SeccionFormulario } from "@/componentes/panel/seccion-formulario";
 import { MensajeError } from "@/componentes/panel/campo";
-import { ArrowLeftIcon, PlusIcon, SearchIcon } from "lucide-react";
+import { ArrowLeftIcon, PlusIcon } from "lucide-react";
 import { ParaQuien } from "@/componentes/panel/para-quien";
 import type { EstadoCliente } from "@/modulos/clientes/acciones";
 import type { CatalogoVehiculos } from "@/modulos/clientes/catalogo-vehiculos";
@@ -45,6 +45,9 @@ import { SeccionAdelanto, type DejoAdelanto } from "./seccion-adelanto";
 import { SeccionFechasReserva } from "./seccion-fechas-reserva";
 import { ConResumen, FilaResumen } from "@/componentes/panel/con-resumen";
 import { CabeceraTarjeta } from "@/componentes/panel/cabecera-seccion";
+import { GRIS_SIN_ELEGIR, ListaConNuevo, NUEVO } from "@/componentes/panel/lista-con-nuevo";
+import { Buscador } from "@/componentes/panel/buscador";
+import { useRouter } from "next/navigation";
 
 // HU-30: agendar una reserva (RF-36, RF-37). Las fechas sugieren la entrega con la mayor duración de los servicios
 // (decisión del 20/10: es aproximada y se edita); pedido 55: sin espacio ni límite por día. El
@@ -111,6 +114,14 @@ type Nuevo = {
   iniciales?: Record<string, string>;
   /** Arriba del paso del vehículo (la foto de cuando cotizó el interesado). */
   ayuda?: React.ReactNode;
+  /** La reserva con un vehículo ya registrado, con `vehiculo=0` en lugar de su id: elegir uno de la lista lleva ahí. */
+  conVehiculo?: string;
+  /** Sin cliente (24/11): la lista para elegirlo, con "Cliente nuevo" que se llena ahí mismo. */
+  clientes?: { opciones: { id: number; titulo: string; detalle: string }[]; nota: string | null };
+  nuevoMarcado?: boolean;
+  /** Con un cliente registrado (24/11): sus vehículos, con "Otro vehículo" que se llena ahí mismo. */
+  vehiculos?: { id: number; placa: string; detalle: string }[];
+  otroMarcado?: boolean;
 };
 
 /** El precio que sugiere el catálogo para esa variante, como se escribe en el campo; vacío si no hay. */
@@ -369,6 +380,12 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
   };
   const vista: EstadoCliente = { ...estado, errores: e as Record<string, string>, existentes: Object.fromEntries(Object.entries(estado.existentes ?? {}).filter(vigente)) };
   // El aviso de repetido lleva a reservarle a ese cliente, no a su ficha
+  // Lo marcado en las listas (24/11): el cliente (uno registrado o NUEVO) y el vehículo; "Siguiente" lo confirma
+  const [quien, setQuien] = useState<string | null>(nuevo?.nuevoMarcado ? NUEVO : null);
+  const [cual, setCual] = useState<string | null>(nuevo?.otroMarcado ? NUEVO : nuevo?.vehiculos?.length === 1 ? String(nuevo.vehiculos[0].id) : null);
+  const router = useRouter();
+  const conListaClientes = !!nuevo?.clientes;
+  const conListaVehiculos = !!nuevo?.vehiculos;
   const conCliente = nuevo?.conCliente;
   const usarExistente = conCliente ? (x: { id: number; nombre: string }) => ({ href: conCliente.replace("cliente=0", `cliente=${x.id}`) as Route, texto: `Usar a ${x.nombre}` }) : undefined;
   const nombreCliente = nuevo ? (nuevo.clienteNuevo ? (paso > PASO_CLIENTE ? resumen.nombre : "") : (nuevo.nombreCliente ?? "")) : "";
@@ -455,25 +472,53 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
 
       {nuevo?.clienteNuevo && (
         <div data-paso={PASO_CLIENTE} hidden={paso !== PASO_CLIENTE}>
-          {/* Como en Nueva cotización: el título adentro, con "Buscar un cliente registrado" al lado */}
-          <SeccionFormulario
-            titulo={directa ? "Cliente nuevo" : "Cliente"}
-            accion={
-              nuevo.volverAElegir && (
-                <Link href={nuevo.volverAElegir} className={buttonVariants({ variant: "accion" })}>
-                  <SearchIcon />
-                  Buscar un cliente registrado
-                </Link>
+          {/* La lista de clientes con "Cliente nuevo" que se llena ahí mismo (24/11), como en Nueva cotización */}
+          <ListaConNuevo
+            id="cliente"
+            titulo="Cliente"
+            encima={
+              conListaClientes && (
+                <div className="px-4 pt-4 sm:px-5">
+                  <Buscador />
+                </div>
               )
             }
-            claseContenido="gap-6"
+            debajo={nuevo.clientes?.nota && <p className="border-t border-border px-4 py-3 text-sm text-tinta-suave">{nuevo.clientes.nota}</p>}
+            etiqueta="Elegir cliente"
+            opciones={(nuevo.clientes?.opciones ?? []).map((c) => ({ clave: String(c.id), titulo: c.titulo, detalle: c.detalle }))}
+            nuevo={{ titulo: "Cliente nuevo", detalle: "Registrar a alguien que todavía no está" }}
+            elegida={conListaClientes ? quien : NUEVO}
+            alElegir={setQuien}
           >
             <CamposCliente estado={vista} iniciales={nuevo.iniciales} plegar enlaceExistente={usarExistente} />
-          </SeccionFormulario>
+          </ListaConNuevo>
         </div>
       )}
       {nuevo && (
         <div data-paso={PASO_VEHICULO} hidden={paso !== PASO_VEHICULO}>
+          {conListaVehiculos ? (
+            // Sus vehículos con "Otro vehículo" que se llena ahí mismo (24/11), como en Nueva cotización
+            <ListaConNuevo
+              id="vehiculo"
+              titulo="Vehículo"
+              etiqueta="Elegir vehículo"
+              opciones={(nuevo.vehiculos ?? []).map((v) => ({ clave: String(v.id), titulo: v.placa, esPlaca: true, detalle: v.detalle }))}
+              nuevo={{ titulo: "Otro vehículo", detalle: "Registrar uno nuevo" }}
+              elegida={cual}
+              alElegir={setCual}
+            >
+            {/* Completo, como en Nueva cotización: placa y tamaño, y marca, modelo, año y color a la vista */}
+            <CamposVehiculo
+              estado={vista}
+              iniciales={nuevo.iniciales}
+              prefijo={PREFIJO_VEHICULO}
+              tamanos={nuevo.tamanos}
+              catalogo={nuevo.catalogo}
+              enlaceExistente={usarExistente}
+              alCambiarTamano={cambiarTamano}
+            />
+            </ListaConNuevo>
+          ) : (
           <SeccionFormulario titulo={nuevo.clienteNuevo || !directa ? "Vehículo" : "Otro vehículo"} claseContenido="gap-4">
             {nuevo.ayuda}
             {/* Completo, como en Nueva cotización: placa y tamaño, y marca, modelo, año y color a la vista */}
@@ -487,6 +532,7 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
               alCambiarTamano={cambiarTamano}
             />
           </SeccionFormulario>
+          )}
         </div>
       )}
 
@@ -575,7 +621,7 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
       )}
 
       {(paso !== PASO_SERVICIOS || conSiguiente) && (
-        <PieFormulario>
+        <PieFormulario pegado>
           <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-2">
             {/* El total de la reserva directa, a la vista mientras se cargan los precios */}
             {/* Desde los servicios, siempre (también en 0 Bs): que aparezca al elegir el primero corría los botones (20/11).
@@ -647,8 +693,20 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
                 <Button
                   key={`siguiente-${paso}`}
                   type="button"
+                  // En gris hasta que se elige (24/11): el cliente y el vehículo de las listas
+                  disabled={(paso === PASO_CLIENTE && conListaClientes && !quien) || (paso === PASO_VEHICULO && conListaVehiculos && !cual)}
+                  className={GRIS_SIN_ELEGIR}
                   onClick={(ev) => {
                     ev.preventDefault();
+                    // Uno ya registrado: su reserva sigue con sus datos, en su dirección
+                    if (paso === PASO_CLIENTE && conListaClientes && quien && quien !== NUEVO && conCliente) {
+                      router.push(conCliente.replace("cliente=0", `cliente=${quien}`) as Route);
+                      return;
+                    }
+                    if (paso === PASO_VEHICULO && conListaVehiculos && cual && cual !== NUEVO && nuevo?.conVehiculo) {
+                      router.push(nuevo.conVehiculo.replace("vehiculo=0", `vehiculo=${cual}`) as Route);
+                      return;
+                    }
                     siguiente();
                   }}
                 >

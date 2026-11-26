@@ -4,17 +4,15 @@ import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
-import { PasosFlujo } from "@/componentes/panel/pasos-flujo";
 import { fechaEnBolivia } from "@/lib/fechas";
 import { exigirAccion } from "@/lib/sesion";
-import { ElegirCliente } from "@/modulos/clientes/componentes/elegir-cliente";
+import { clientesParaElegir } from "@/modulos/clientes/componentes/elegir-cliente";
 import { obtenerCliente } from "@/modulos/clientes/consultas";
 import { detalleVehiculo } from "@/modulos/clientes/reglas";
 import { tamanosActivos } from "@/modulos/configuracion/consultas";
 import { FormularioNuevaCotizacion, type ClienteElegido } from "@/modulos/cotizaciones/componentes/formulario-nueva-cotizacion";
 import { inicioCotizacion, opcionesPorTamano } from "@/modulos/cotizaciones/consultas/servicios";
-import { PASO_CLIENTE, PASOS_NUEVA_COTIZACION } from "@/modulos/cotizaciones/pasos";
-import { conDesde, leerDesde, volverDesde } from "@/lib/volver";
+import { leerDesde, volverDesde } from "@/lib/volver";
 import { catalogoVehiculos } from "@/modulos/clientes/consultas";
 
 export const metadata: Metadata = { title: "Nueva cotización" };
@@ -72,25 +70,27 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/cotizaciones/n
     }
   }
 
-  if (texto("nuevo"))
-    return (
-      <>
-        {encabezado}
-        <Formulario cliente={null} volver={origen} />
-      </>
-    );
-
-  // Paso 1: elegir el cliente (o "Cliente nuevo", que sigue en el formulario)
+  // Paso 1 (24/11): en el mismo formulario, la lista de clientes con "Cliente nuevo" que se llena ahí mismo
+  const clientes = await clientesParaElegir(texto("q"), true);
   return (
     <>
       {encabezado}
-      <PasosFlujo pasos={PASOS_NUEVA_COTIZACION} actual={PASO_CLIENTE} etiqueta="Pasos de la cotización" />
-      <ElegirCliente q={texto("q")} hrefCliente={(id) => conDesde(`/panel/cotizaciones/nueva?cliente=${id}`, origen)} hrefNuevo={conDesde("/panel/cotizaciones/nueva?nuevo=1", origen)} />
+      <Formulario cliente={null} volver={origen} clientes={clientes} nuevoMarcado={!!texto("nuevo")} />
     </>
   );
 }
 
-async function Formulario({ cliente, volver }: { cliente: ClienteElegido | null; volver: string | null }) {
+async function Formulario({
+  cliente,
+  volver,
+  clientes,
+  nuevoMarcado,
+}: {
+  cliente: ClienteElegido | null;
+  volver: string | null;
+  clientes?: Awaited<ReturnType<typeof clientesParaElegir>>;
+  nuevoMarcado?: boolean;
+}) {
   const [tamanos, catalogo] = await Promise.all([tamanosActivos(), catalogoVehiculos()]);
   // Los precios de cada tamaño activo y de los de sus vehículos (un tamaño desactivado sigue valiendo para un auto que ya lo tiene)
   const [opciones, inicio] = await Promise.all([opcionesPorTamano([...tamanos.map((t) => t.id), ...(cliente?.vehiculos.map((v) => v.tamanoId) ?? [])]), inicioCotizacion()]);
@@ -99,5 +99,5 @@ async function Formulario({ cliente, volver }: { cliente: ClienteElegido | null;
     return <EstadoVacio>No hay servicios activos para cotizar: se activan en Catálogo y precios.</EstadoVacio>;
   }
   // La key lo rearma si cambia el cliente sin salir de la pantalla ("Usar a …", ya registrado)
-  return <FormularioNuevaCotizacion key={cliente?.id} cliente={cliente} tamanos={tamanos} catalogo={catalogo} opciones={opciones} inicio={inicio} hoy={fechaEnBolivia()} volver={volver} />;
+  return <FormularioNuevaCotizacion key={cliente?.id} cliente={cliente} tamanos={tamanos} catalogo={catalogo} opciones={opciones} inicio={inicio} hoy={fechaEnBolivia()} volver={volver} clientes={clientes} nuevoMarcado={nuevoMarcado} />;
 }
