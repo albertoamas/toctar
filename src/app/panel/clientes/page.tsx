@@ -16,7 +16,7 @@ import { listarClientes, vehiculoConPlacaExacta } from "@/modulos/clientes/consu
 import { normalizarBusqueda, rutaVehiculo } from "@/modulos/clientes/reglas";
 import { ListaFilas } from "@/componentes/panel/fila-lista";
 import { BarraLista } from "@/componentes/panel/barra-lista";
-import { PildoraVista } from "@/componentes/panel/pildora-vista";
+import { ENLACE_TEXTO } from "@/componentes/panel/enlace-texto";
 import { aqui, conDesde } from "@/lib/volver";
 import { Paginacion } from "@/componentes/panel/paginacion";
 import { conPagina, leerPagina } from "@/lib/paginacion";
@@ -41,7 +41,7 @@ export default function PaginaClientes({ searchParams }: PageProps<"/panel/clien
       />
       {/* Aparte de la lista: al buscar, el campo no se vuelve a montar y no pierde el foco */}
       <Suspense fallback={<div className="h-9 pointer-coarse:h-11" />}>
-        <BarraLista buscador={<Buscador />} derecha={<PildoraVista texto="Desactivados" valor="desactivados" />} />
+        <BarraLista buscador={<Buscador />} />
       </Suspense>
       <Suspense fallback={<Cargando />}>
         <Lista searchParams={searchParams} />
@@ -63,6 +63,22 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/clientes">, "searc
     q && !desactivados ? vehiculoConPlacaExacta(q) : null,
   ]);
   const busqueda = normalizarBusqueda(q);
+  // Los desactivados, al final de la lista (26/11): se miran poco y en el celular ocupaban un renglón arriba. Viéndolos,
+  // arriba dice qué son, con la vuelta a los activos
+  const otraVista = conPagina("/panel/clientes", { ...parametros, ver: desactivados ? undefined : "desactivados" }, 1) as Route;
+  const vista = desactivados ? (
+    <p className="flex flex-wrap items-center gap-x-3 text-sm text-tinta-suave">
+      Clientes desactivados
+      <Link href={otraVista} className={cn(ENLACE_TEXTO, "text-tinta")}>
+        Ver los activos
+      </Link>
+    </p>
+  ) : null;
+  const alFinal = desactivados ? null : (
+    <Link href={otraVista} className={cn(ENLACE_TEXTO, "text-sm text-tinta-suave")}>
+      Ver clientes desactivados
+    </Link>
+  );
   // Pedido 51: una placa exacta, arriba, también si su dueño no sale en la lista (desactivado)
   const atajo = delVehiculo && (
     <ListaFilas
@@ -80,6 +96,7 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/clientes">, "searc
   if (clientes.length === 0) {
     return (
       <>
+        {vista}
         {atajo}
         <EstadoVacio>
           {q
@@ -88,12 +105,14 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/clientes">, "searc
               ? "No hay clientes desactivados."
               : "Todavía no hay clientes. Agrega el primero con «Nuevo cliente»."}
         </EstadoVacio>
+        {alFinal}
       </>
     );
   }
 
   return (
     <>
+      {vista}
       {atajo}
       <TablaClientes
         etiqueta={desactivados ? "Clientes desactivados" : "Clientes"}
@@ -103,6 +122,7 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/clientes">, "searc
         atenuadas={desactivados}
       />
       <Paginacion pagina={pagina} paginas={paginas} total={total} nombre={["cliente", "clientes"]} enlace={(p) => conPagina("/panel/clientes", parametros, p)} />
+      {alFinal}
     </>
   );
 }
