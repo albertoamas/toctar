@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import { boolean, check, index, integer, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import { usuario } from "./acceso";
-import { tamanoVehiculo } from "./configuracion";
+import { archivo, tamanoVehiculo } from "./configuracion";
 
 // Clientes y vehículos (C1, HU-21 a HU-23). Especificación: docs/08-desarrollo/etapas/C1-catalogo-clientes.md §4.
 // El cliente no usa el sistema (RN-11): los registra el personal. Se desactivan, no se borran (RN-14).
@@ -43,6 +43,8 @@ export const vehiculo = pgTable(
     modelo: text("modelo"),
     anio: integer("anio"),
     color: text("color"),
+    /** Para saber cuál es de un vistazo (pedido 58): privada; se borra el archivo y queda sin foto. */
+    fotoArchivoId: integer("foto_archivo_id").references(() => archivo.id, { onDelete: "set null" }),
     activo: boolean("activo").default(true).notNull(),
     createdAt: momento("created_at").defaultNow().notNull(),
     updatedAt: momento("updated_at").defaultNow().notNull(),

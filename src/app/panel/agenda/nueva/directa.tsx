@@ -70,7 +70,7 @@ export async function ReservaDirecta({ ctx, clienteId }: { ctx: Contexto; client
         ctx={ctx}
         clienteId={d.cliente.id}
         nombreCliente={d.cliente.nombre}
-        vehiculos={d.vehiculos.map((v) => ({ id: v.id, placa: v.placa, detalle: [...v.detalle, `Tamaño: ${v.tamano}`].join(" · ") }))}
+        vehiculos={d.vehiculos.map((v) => ({ id: v.id, placa: v.placa, detalle: [...v.detalle, `Tamaño: ${v.tamano}`].join(" · "), miniatura: v.foto?.miniatura ?? null }))}
         otroMarcado={texto("vehiculo") === "nuevo" || d.vehiculos.length === 0}
       />
     );
@@ -96,6 +96,7 @@ export async function ReservaDirecta({ ctx, clienteId }: { ctx: Contexto; client
                 placa: v.placa,
                 detalle: [...v.detalle, `Tamaño: ${v.tamano}`].join(" · "),
                 href: direccion({ cliente: d.cliente.id, vehiculo: v.id }),
+                miniatura: v.foto?.miniatura ?? null,
               }))}
               otro={registra ? direccion({ cliente: d.cliente.id, vehiculo: "nuevo" }) : null}
               // "Atrás" en todos los pasos (20/11): aquí, a elegir otro cliente, junto a "Siguiente" en el pie
@@ -199,7 +200,7 @@ export async function ReservaConNuevos({
   clientes?: { opciones: { id: number; titulo: string; detalle: string }[]; nota: string | null };
   nuevoMarcado?: boolean;
   /** Con un cliente registrado: sus vehículos para elegir (24/11). */
-  vehiculos?: { id: number; placa: string; detalle: string }[];
+  vehiculos?: { id: number; placa: string; detalle: string; miniatura: string | null }[];
   otroMarcado?: boolean;
 }) {
   const { conPagos, volver, origen, hoy, fechaInicial, direccion, clave } = ctx;

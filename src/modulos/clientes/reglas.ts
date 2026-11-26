@@ -101,3 +101,6 @@ export const prefijoVehiculo = (id?: number) => (id ? `vehiculo-${id}-` : "vehic
 
 /** La ficha de un vehículo, dentro de la de su dueño (pedido 51). */
 export const rutaVehiculo = (clienteId: number, vehiculoId: number) => `/panel/clientes/${clienteId}/vehiculos/${vehiculoId}`;
+
+/** La foto del vehículo no sirve (pedido 58): el mismo texto que la del interesado (P31b). */
+export const ERROR_FOTO_VEHICULO = "La foto debe ser JPG, PNG o WebP de hasta 5 MB. Prueba con otra o sigue sin ella.";

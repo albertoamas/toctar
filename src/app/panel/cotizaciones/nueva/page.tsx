@@ -59,7 +59,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/cotizaciones/n
         telefono: c.telefono,
         vehiculos: c.vehiculos
           .filter((v) => v.activo)
-          .map((v) => ({ id: v.id, placa: v.placa, tamanoId: v.tamanoId, tamano: v.tamano, detalle: detalleVehiculo(v) })),
+          .map((v) => ({ id: v.id, placa: v.placa, tamanoId: v.tamanoId, tamano: v.tamano, detalle: detalleVehiculo(v), miniatura: v.foto?.miniatura ?? null })),
       };
       return (
         <>

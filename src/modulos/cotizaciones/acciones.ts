@@ -11,7 +11,7 @@ import { erroresDe, indiceUnicoViolado, type EstadoFormulario } from "@/lib/form
 import { exigirAccion, exigirModulo } from "@/lib/sesion";
 import { clienteConTelefono } from "@/modulos/clientes/consultas";
 import { esquemaVehiculo } from "@/modulos/clientes/esquemas";
-import { conMarcaDeLaLista, type EstadoCliente, type Existentes, revisarVehiculo } from "@/modulos/clientes/servidor";
+import { conMarcaDeLaLista, descartarFotoVehiculo, type EstadoCliente, type Existentes, revisarVehiculo, subirFotoVehiculo } from "@/modulos/clientes/servidor";
 import { camposConPrefijo, erroresConPrefijo, leerValores, PREFIJO_VEHICULO } from "@/modulos/clientes/valores";
 import { obtenerParametros } from "@/modulos/configuracion/consultas";
 import { entradaPrecios, ERROR_FOTO_INTERESADO, esquemaCambioEstado, esquemaClienteElegido, esquemaInteresado, esquemaNuevaVersion, esquemaPreciosNuevos, esquemaVehiculoElegido } from "./esquemas";
@@ -140,6 +140,12 @@ export async function crearCotizacion(_previo: EstadoCliente, datos: FormData): 
       return { errores: { foto: "No se pudo subir la foto. Vuelve a intentar o sigue sin ella." }, valores };
     }
   }
+  // La foto de "Otro vehículo" (pedido 58), si vino
+  const fotoVehiculo = nuevoVehiculo ? await subirFotoVehiculo(datos, PREFIJO_VEHICULO, autorId) : { archivoId: null };
+  if ("error" in fotoVehiculo) {
+    if (fotoId) await eliminarFoto(fotoId).catch((e) => console.error("No se pudo borrar la foto de la cotización", e));
+    return { errores: { [`${PREFIJO_VEHICULO}foto`]: fotoVehiculo.error }, valores };
+  }
   let ids: { consulta: number; cliente: number | null; version: number };
   try {
     ids = await db.transaction(async (tx) => {
@@ -172,7 +178,10 @@ export async function crearCotizacion(_previo: EstadoCliente, datos: FormData): 
       // Un cliente al que se le cotiza sube en la lista de recientes de Clientes
       await tx.update(cliente).set({ updatedAt: sql`now()` }).where(eq(cliente.id, clienteId));
       if (nuevoVehiculo) {
-        const [v] = await tx.insert(vehiculo).values({ ...(await conMarcaDeLaLista(tx, nuevoVehiculo)), clienteId, createdBy: autorId }).returning({ id: vehiculo.id });
+        const [v] = await tx
+          .insert(vehiculo)
+          .values({ ...(await conMarcaDeLaLista(tx, nuevoVehiculo)), fotoArchivoId: fotoVehiculo.archivoId, clienteId, createdBy: autorId })
+          .returning({ id: vehiculo.id });
         vehiculoId = v.id;
       } else {
         // Sigue siendo de ese cliente, con el vehículo bloqueado: un cambio de dueño a la vez no deja una cotización del
@@ -202,6 +211,7 @@ export async function crearCotizacion(_previo: EstadoCliente, datos: FormData): 
     });
   } catch (error) {
     if (fotoId) await eliminarFoto(fotoId).catch((e) => console.error("No se pudo borrar la foto de la cotización", e));
+    await descartarFotoVehiculo(fotoVehiculo.archivoId);
     if (error instanceof VehiculoCambio) return { errores: { vehiculo: "Elige el vehículo." }, valores };
     // Dos personas registrando lo mismo a la vez: lo frena el índice único
     const indice = indiceUnicoViolado(error);

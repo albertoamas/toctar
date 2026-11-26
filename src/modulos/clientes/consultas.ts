@@ -2,7 +2,8 @@ import "server-only";
 import { and, asc, count, desc, eq, inArray, like, ne, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { ajustarPagina, POR_PAGINA } from "@/lib/paginacion";
-import { cliente, consulta, marcaVehiculo, recordatorioMantenimiento, tamanoVehiculo, trabajo, vehiculo } from "@/db/esquema";
+import { type UrlsFoto, urlsFotoPrivada } from "@/lib/fotos";
+import { archivo, cliente, consulta, marcaVehiculo, recordatorioMantenimiento, tamanoVehiculo, trabajo, vehiculo } from "@/db/esquema";
 import type { EstadoTrabajo } from "@/db/esquema/trabajos";
 import { cotizacionAbierta } from "@/modulos/cotizaciones/consultas/lista";
 import { ESTADOS_RECORDATORIO_ABIERTO } from "@/modulos/mantenimientos/reglas";
@@ -88,7 +89,19 @@ export type VehiculoCliente = {
   anio: number | null;
   color: string | null;
   activo: boolean;
+  /** Su foto (pedido 58), privada: direcciones firmadas por un rato. */
+  foto: UrlsFoto | null;
 };
+
+/** Las columnas de la foto de un vehículo, con `leftJoin(archivo, …)`. */
+const COLUMNAS_FOTO = { fotoClave: archivo.clave, fotoMiniatura: archivo.miniaturaClave, fotoAncho: archivo.ancho, fotoAlto: archivo.alto };
+type ConColumnasFoto = { fotoClave: string | null; fotoMiniatura: string | null; fotoAncho: number | null; fotoAlto: number | null };
+
+/** Cambia las columnas de la foto por sus direcciones (privadas). */
+async function conFoto<T extends ConColumnasFoto>({ fotoClave, fotoMiniatura, fotoAncho, fotoAlto, ...resto }: T): Promise<Omit<T, keyof ConColumnasFoto> & { foto: UrlsFoto | null }> {
+  const foto = fotoClave ? await urlsFotoPrivada({ clave: fotoClave, miniaturaClave: fotoMiniatura, ancho: fotoAncho, alto: fotoAlto }) : null;
+  return { ...resto, foto };
+}
 
 export type DetalleCliente = {
   id: number;
@@ -129,12 +142,14 @@ export async function obtenerCliente(id: number): Promise<DetalleCliente | null>
       anio: vehiculo.anio,
       color: vehiculo.color,
       activo: vehiculo.activo,
+      ...COLUMNAS_FOTO,
     })
     .from(vehiculo)
     .innerJoin(tamanoVehiculo, eq(vehiculo.tamanoId, tamanoVehiculo.id))
+    .leftJoin(archivo, eq(vehiculo.fotoArchivoId, archivo.id))
     .where(eq(vehiculo.clienteId, id))
     .orderBy(desc(vehiculo.activo), asc(vehiculo.id));
-  return { ...c, vehiculos };
+  return { ...c, vehiculos: await Promise.all(vehiculos.map(conFoto)) };
 }
 
 export type FichaVehiculo = VehiculoCliente & {
@@ -159,12 +174,14 @@ export async function fichaVehiculo(id: number): Promise<FichaVehiculo | null> {
       color: vehiculo.color,
       activo: vehiculo.activo,
       dueno: { id: cliente.id, nombre: cliente.nombre, telefono: cliente.telefono, activo: cliente.activo },
+      ...COLUMNAS_FOTO,
     })
     .from(vehiculo)
     .innerJoin(tamanoVehiculo, eq(vehiculo.tamanoId, tamanoVehiculo.id))
     .innerJoin(cliente, eq(vehiculo.clienteId, cliente.id))
+    .leftJoin(archivo, eq(vehiculo.fotoArchivoId, archivo.id))
     .where(eq(vehiculo.id, id));
-  return v ?? null;
+  return v ? await conFoto(v) : null;
 }
 
 /**

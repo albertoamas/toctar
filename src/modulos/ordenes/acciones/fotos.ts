@@ -1,8 +1,8 @@
 "use server";
 
-import { and, count, eq } from "drizzle-orm";
+import { and, count, eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
-import { trabajo, trabajoFoto } from "@/db/esquema";
+import { trabajo, trabajoFoto, vehiculo } from "@/db/esquema";
 import { eliminarFoto, guardarFoto } from "@/lib/fotos";
 import { type EstadoFormulario } from "@/lib/formularios";
 import { exigirModulo } from "@/lib/sesion";
@@ -55,6 +55,14 @@ export async function subirFotoOrden(_previo: EstadoFormulario, datos: FormData)
       const motivo = motivoSinFoto(etapa, actual.estado, await contarFotos(tx, trabajoId, etapa));
       if (motivo) throw new Conflicto(motivo);
       await tx.insert(trabajoFoto).values({ trabajoId, archivoId: r.archivoId, etapa, subidoPor: autorId });
+      // La primera de "antes" (el auto como llegó), si el vehículo no tiene foto, pasa a ser la suya (pedido 58): el mismo archivo.
+      // Si después se quita de la orden, el vehículo queda sin foto (la columna es "on delete set null")
+      if (etapa === "antes") {
+        await tx
+          .update(vehiculo)
+          .set({ fotoArchivoId: r.archivoId })
+          .where(and(isNull(vehiculo.fotoArchivoId), eq(vehiculo.id, tx.select({ id: trabajo.vehiculoId }).from(trabajo).where(eq(trabajo.id, trabajoId)))));
+      }
     });
   } catch (error) {
     // Sin la fila en la orden, la foto no la encontraría nadie: se borra

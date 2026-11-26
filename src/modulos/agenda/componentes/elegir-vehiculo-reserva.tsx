@@ -7,7 +7,7 @@ import { TarjetasParaElegir } from "@/componentes/panel/tarjetas-para-elegir";
 // confirma con "Siguiente: servicios". Al final, "Otro vehículo": sus datos se escriben en el paso siguiente y se
 // registra con la reserva, como en Nueva cotización.
 
-type VehiculoParaElegir = { id: number; placa: string; detalle: string; href: Route };
+type VehiculoParaElegir = { id: number; placa: string; detalle: string; href: Route; /** Su foto (pedido 58): null, sin foto. */ miniatura: string | null };
 
 export function ElegirVehiculoReserva({
   vehiculos,
@@ -25,7 +25,7 @@ export function ElegirVehiculoReserva({
       id="vehiculo"
       titulo="Vehículo"
       etiqueta="Elegir vehículo"
-      tarjetas={vehiculos.map((v) => ({ clave: v.id, href: v.href, titulo: v.placa, esPlaca: true, detalle: v.detalle }))}
+      tarjetas={vehiculos.map((v) => ({ clave: v.id, href: v.href, titulo: v.placa, esPlaca: true, detalle: v.detalle, miniatura: v.miniatura }))}
       nuevo={otro ? { titulo: "Otro vehículo", detalle: "Registrar uno nuevo", href: otro } : null}
       siguiente="Siguiente: servicios"
       atras={atras}

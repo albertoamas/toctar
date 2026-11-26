@@ -19,10 +19,12 @@ type Props = {
    * Debajo del título, un dato que sirve (C7, 18/11): el WhatsApp del cliente, el vehículo y su dueño.
    */
   subtitulo?: React.ReactNode;
+  /** A la izquierda del título, una foto que dice qué es: la del vehículo en su ficha (pedido 58). */
+  imagen?: React.ReactNode;
   children?: React.ReactNode;
 };
 
-export function EncabezadoPagina({ titulo, estado, accion, volver, subtitulo, children }: Props) {
+export function EncabezadoPagina({ titulo, estado, accion, volver, subtitulo, imagen, children }: Props) {
   return (
     <div className="flex flex-col gap-1">
       {/* El botón principal, a la derecha del título, también en el celular (10/11: bajaba a otra fila cuando el título era
@@ -32,6 +34,7 @@ export function EncabezadoPagina({ titulo, estado, accion, volver, subtitulo, ch
         {/* El botón va con el título y su contexto, no con las acciones: en el celular, ellas bajan a su fila */}
         <div className="flex min-w-0 flex-1 basis-40 items-center gap-3">
           {volver && <BotonVolver href={volver.href} texto={volver.texto} />}
+          {imagen}
           <div className="flex min-w-0 flex-col">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
               <h1 className="tt-titulo-pagina">{titulo}</h1>

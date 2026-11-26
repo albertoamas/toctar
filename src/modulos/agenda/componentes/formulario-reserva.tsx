@@ -120,7 +120,7 @@ type Nuevo = {
   clientes?: { opciones: { id: number; titulo: string; detalle: string }[]; nota: string | null };
   nuevoMarcado?: boolean;
   /** Con un cliente registrado (24/11): sus vehículos, con "Otro vehículo" que se llena ahí mismo. */
-  vehiculos?: { id: number; placa: string; detalle: string }[];
+  vehiculos?: { id: number; placa: string; detalle: string; miniatura: string | null }[];
   otroMarcado?: boolean;
 };
 
@@ -502,7 +502,7 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
               id="vehiculo"
               titulo="Vehículo"
               etiqueta="Elegir vehículo"
-              opciones={(nuevo.vehiculos ?? []).map((v) => ({ clave: String(v.id), titulo: v.placa, esPlaca: true, detalle: v.detalle }))}
+              opciones={(nuevo.vehiculos ?? []).map((v) => ({ clave: String(v.id), titulo: v.placa, esPlaca: true, detalle: v.detalle, miniatura: v.miniatura }))}
               nuevo={{ titulo: "Otro vehículo", detalle: "Registrar uno nuevo" }}
               elegida={cual}
               alElegir={setCual}

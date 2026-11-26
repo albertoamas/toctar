@@ -1,16 +1,16 @@
 "use server";
 
-import { and, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect, RedirectType } from "next/navigation";
 import { db } from "@/db";
-import { auditoria, cliente, consulta, cotizacion, pago, recordatorioMantenimiento, servicio, trabajo, trabajoLinea, variante, vehiculo } from "@/db/esquema";
+import { auditoria, cliente, consulta, consultaArchivo, cotizacion, pago, recordatorioMantenimiento, servicio, trabajo, trabajoLinea, variante, vehiculo } from "@/db/esquema";
 import { diaLegible, fechaEnBolivia } from "@/lib/fechas";
 import { erroresDe, indiceUnicoViolado, type EstadoFormulario } from "@/lib/formularios";
 import type { z } from "zod";
 import { clienteConTelefono } from "@/modulos/clientes/consultas";
 import { esquemaCliente, esquemaVehiculo } from "@/modulos/clientes/esquemas";
-import { conMarcaDeLaLista, type EstadoCliente, type Existentes, revisarVehiculo } from "@/modulos/clientes/servidor";
+import { conMarcaDeLaLista, descartarFotoVehiculo, type EstadoCliente, type Existentes, revisarVehiculo, subirFotoVehiculo } from "@/modulos/clientes/servidor";
 import { camposConPrefijo, erroresConPrefijo, leerValores, PREFIJO_VEHICULO } from "@/modulos/clientes/valores";
 import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
@@ -210,6 +210,12 @@ export async function agendarReserva(_previo: EstadoCliente, datos: FormData): P
   const foto = await guardarComprobante(adelanto ? datos.get("comprobante") : null, autorId);
   if (!foto.ok) return { errores: { comprobante: foto.error } };
   const comprobanteId = foto.archivoId;
+  // La foto de "Otro vehículo" (pedido 58), si vino
+  const fotoVehiculo = nuevoVehiculo ? await subirFotoVehiculo(datos, PREFIJO_VEHICULO, autorId) : { archivoId: null };
+  if ("error" in fotoVehiculo) {
+    await descartarComprobante(comprobanteId);
+    return { errores: { [`${PREFIJO_VEHICULO}foto`]: fotoVehiculo.error }, valores };
+  }
   let resultado: { id: number; clienteId: number };
   try {
     resultado = await db.transaction(async (tx) => {
@@ -238,7 +244,15 @@ export async function agendarReserva(_previo: EstadoCliente, datos: FormData): P
         clienteId = c.id;
       }
       if (nuevoVehiculo) {
-        const [v] = await tx.insert(vehiculo).values({ ...(await conMarcaDeLaLista(tx, nuevoVehiculo)), clienteId: clienteId!, createdBy: autorId }).returning({ id: vehiculo.id });
+        // Sin foto nueva, la que mandó el interesado al cotizar pasa a su vehículo (pedido 58): el mismo archivo
+        const [delInteresado] =
+          !fotoVehiculo.archivoId && deInteresado
+            ? await tx.select({ id: consultaArchivo.archivoId }).from(consultaArchivo).where(eq(consultaArchivo.consultaId, consultaId!)).orderBy(asc(consultaArchivo.orden)).limit(1)
+            : [];
+        const [v] = await tx
+          .insert(vehiculo)
+          .values({ ...(await conMarcaDeLaLista(tx, nuevoVehiculo)), fotoArchivoId: fotoVehiculo.archivoId ?? delInteresado?.id ?? null, clienteId: clienteId!, createdBy: autorId })
+          .returning({ id: vehiculo.id });
         vehiculoId = v.id;
       }
       // La cotización del interesado queda con su cliente y su vehículo (P31b). Solo si sigue sin cliente: si otra persona
@@ -316,6 +330,7 @@ export async function agendarReserva(_previo: EstadoCliente, datos: FormData): P
     });
   } catch (error) {
     await descartarComprobante(comprobanteId);
+    await descartarFotoVehiculo(fotoVehiculo.archivoId);
     if (error instanceof Conflicto) return { mensaje: error.message };
     // Dos personas reservaron el mismo espacio a la vez: la base frenó la segunda (D-5)
     if (indiceUnicoViolado(error) === "trabajo_cotizacion_unica") return { mensaje: "Esa cotización ya fue reservada." };
