@@ -39,6 +39,13 @@ test("desde la ficha del cliente se abre la del vehículo, con su dueño y su hi
   await expect(historial).toContainText(`Con ${a.anterior}`);
   // "Nueva reserva" llega con el cliente y el vehículo elegidos
   await expect(page.getByRole("link", { name: "Nueva reserva" })).toHaveAttribute("href", new RegExp(`/panel/agenda/nueva\\?cliente=${a.actualId}&vehiculo=${a.vehiculoId}`));
+  // "Nueva cotización" (26/11) llega al paso del vehículo con este ya marcado
+  const cotizar = page.getByRole("link", { name: "Nueva cotización" });
+  await expect(cotizar).toHaveAttribute("href", new RegExp(`/panel/cotizaciones/nueva\\?cliente=${a.actualId}&vehiculo=${a.vehiculoId}`));
+  const ficha = page.url();
+  await cotizar.click();
+  await expect(page.getByRole("radio", { name: new RegExp(a.placa) })).toHaveAttribute("aria-checked", "true");
+  await page.goto(ficha);
   // "Volver" a la ficha del dueño
   await page.getByRole("link", { name: /^Volver/ }).first().click();
   await expect(page).toHaveURL(new RegExp(`/panel/clientes/${a.actualId}(?:\\?|$)`));
