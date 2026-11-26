@@ -4,7 +4,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { cn } from "cn";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, FileTextIcon } from "lucide-react";
 import { Cargando } from "@/componentes/panel/cargando";
 import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
@@ -15,7 +15,7 @@ import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { SeccionConEditar } from "@/componentes/panel/seccion-con-editar";
 import { buttonVariants } from "@/componentes/ui/button";
 import { fechaEnBolivia } from "@/lib/fechas";
-import { puedeVerModulo } from "@/lib/permisos";
+import { puede, puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { aqui, conDesde, volverDesde } from "@/lib/volver";
 import { formatearWhatsApp } from "@/lib/whatsapp";
@@ -24,7 +24,7 @@ import { FotoVehiculo } from "@/modulos/clientes/componentes/foto-vehiculo";
 import { MasVehiculo } from "@/modulos/clientes/componentes/mas-vehiculo";
 import { FormularioVehiculo } from "@/modulos/clientes/componentes/vehiculos-cliente";
 import { catalogoVehiculos, fichaVehiculo } from "@/modulos/clientes/consultas";
-import { detalleVehiculo, rutaVehiculo } from "@/modulos/clientes/reglas";
+import { detalleVehiculo, nombreVehiculo, rutaVehiculo } from "@/modulos/clientes/reglas";
 import { obtenerParametros, tamanosActivos } from "@/modulos/configuracion/consultas";
 import { cotizacionesDelVehiculo } from "@/modulos/cotizaciones/consultas/lista";
 import { ListaMantenimientos } from "@/modulos/mantenimientos/componentes/lista-mantenimientos";
@@ -101,6 +101,8 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
   });
   // La reserva directa lleva precios: la arma quien ve pagos, con el cliente y el vehículo ya elegidos
   const reservar = v.activo && v.dueno.activo && verAgenda && verPagos;
+  // Cotizar (26/11, como en la ficha del cliente): con el cliente y este vehículo ya marcados
+  const cotizar = v.activo && v.dueno.activo && puede(usuario, "cotizar");
 
   return (
     <>
@@ -114,8 +116,15 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
         estado={!v.activo && <Insignia>Desactivado</Insignia>}
         accion={
           <div className="flex flex-wrap gap-2">
+            {/* Cotizar en rojo y reservar con borde, como en la ficha del cliente (26/11) */}
+            {cotizar && (
+              <Link href={conDesde(`/panel/cotizaciones/nueva?cliente=${v.dueno.id}&vehiculo=${v.id}`, desdeAqui)} className={cn(buttonVariants())}>
+                <FileTextIcon />
+                <TextoAccion corto="Cotizar">Nueva cotización</TextoAccion>
+              </Link>
+            )}
             {reservar && (
-              <Link href={conDesde(`/panel/agenda/nueva?cliente=${v.dueno.id}&vehiculo=${v.id}`, desdeAqui)} className={cn(buttonVariants())}>
+              <Link href={conDesde(`/panel/agenda/nueva?cliente=${v.dueno.id}&vehiculo=${v.id}`, desdeAqui)} className={cn(buttonVariants({ variant: "outline" }))}>
                 <CalendarIcon />
                 <TextoAccion corto="Reservar">Nueva reserva</TextoAccion>
               </Link>
@@ -149,10 +158,24 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
           </Seccion>
         )}
 
-        {/* Al costado, como en el prototipo v3: el mantenimiento, los datos y el dueño */}
+        {/* Al costado: el dueño primero (26/11: al final, en el celular había que bajar todo para escribirle), los
+            mantenimientos y los datos */}
         <div className="flex min-w-0 flex-col gap-8 @4xl:col-start-2 @4xl:row-start-1">
+          <Seccion id="dueno" titulo="Dueño" sinRelleno>
+            <ListaFilas
+              etiqueta="Dueño"
+              filas={[
+                {
+                  href: conDesde(fichaCliente, desdeAqui),
+                  titulo: v.dueno.nombre,
+                  detalles: [formatearWhatsApp(v.dueno.telefono)],
+                  ...(v.dueno.activo ? {} : { estado: "Desactivado", atenuada: true }),
+                },
+              ]}
+            />
+          </Seccion>
           {verMantenimientos && (
-            <Seccion id="mantenimiento" titulo="Mantenimiento" sinRelleno>
+            <Seccion id="mantenimiento" titulo="Mantenimientos" sinRelleno>
               {mantenimientos.length === 0 ? (
                 <p className="px-4 py-3 text-tinta-suave">No tiene mantenimiento programado.</p>
               ) : (
@@ -175,27 +198,19 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
             lectura={
               <ListaDatos
                 nombre="Datos del vehículo"
-                // La placa ya es el título
-                filas={[detalle.length > 0 && ["Vehículo", detalle.join(" ")], ["Tamaño", v.tamano]]}
+                // Cada dato en su fila (26/11: "Vehículo" repetía el subtítulo); solo los que tienen valor
+                filas={[
+                  ["Tamaño", v.tamano],
+                  !!nombreVehiculo(v) && ["Marca y modelo", nombreVehiculo(v)],
+                  !!v.anio && ["Año", String(v.anio)],
+                  !!v.color?.trim() && ["Color", v.color.trim()],
+                ]}
               />
             }
           >
             <FormularioVehiculo clienteId={v.dueno.id} vehiculo={v} tamanos={tamanos} catalogo={catalogo} />
           </SeccionConEditar>
 
-          <Seccion id="dueno" titulo="Dueño" sinRelleno>
-            <ListaFilas
-              etiqueta="Dueño"
-              filas={[
-                {
-                  href: conDesde(fichaCliente, desdeAqui),
-                  titulo: v.dueno.nombre,
-                  detalles: [formatearWhatsApp(v.dueno.telefono)],
-                  ...(v.dueno.activo ? {} : { estado: "Desactivado", atenuada: true }),
-                },
-              ]}
-            />
-          </Seccion>
         </div>
       </div>
     </>

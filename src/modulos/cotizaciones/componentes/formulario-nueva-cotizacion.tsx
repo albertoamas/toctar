@@ -64,6 +64,8 @@ type Props = {
   clientes?: { opciones: { id: number; titulo: string; detalle: string }[]; nota: string | null };
   /** "Cliente nuevo" ya marcado (llega con ?nuevo=1). */
   nuevoMarcado?: boolean;
+  /** Llega con ?vehiculo=: el de la ficha del vehículo, ya marcado (26/11). */
+  vehiculoElegido?: number;
 };
 
 const CAMPO_TAMANO = `${PREFIJO_VEHICULO}tamanoId`;
@@ -79,7 +81,7 @@ function sugerido(opciones: OpcionServicio[] | null, varianteId: number): string
   return o?.sugerencia.tipo === "monto" ? mostrarMonto(o.sugerencia.monto) : "";
 }
 
-export function FormularioNuevaCotizacion({ cliente, tamanos, catalogo, opciones, inicio, hoy, volver, clientes, nuevoMarcado }: Props) {
+export function FormularioNuevaCotizacion({ cliente, tamanos, catalogo, opciones, inicio, hoy, volver, clientes, nuevoMarcado, vehiculoElegido }: Props) {
   const clienteNuevo = !cliente;
   const router = useRouter();
   // En el paso del cliente: el marcado de la lista (uno registrado o NUEVO); "Siguiente" lo confirma
@@ -170,7 +172,15 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, catalogo, opciones
   // campo interno de los radios de base-ui quedaba vacío tras un error, aunque la opción se siguiera viendo marcada
   const conVehiculos = !!cliente && cliente.vehiculos.length > 0;
   const [vehiculo, setVehiculo] = useState(
-    v.vehiculo ?? (cliente?.vehiculos.length === 1 ? String(cliente.vehiculos[0].id) : cliente && cliente.vehiculos.length === 0 ? VEHICULO_OTRO : ""),
+    v.vehiculo ??
+      // Desde la ficha de un vehículo, ese (si es de este cliente y está activo); con uno solo, ese; sin ninguno, "Otro"
+      (cliente?.vehiculos.some((x) => x.id === vehiculoElegido)
+        ? String(vehiculoElegido)
+        : cliente?.vehiculos.length === 1
+          ? String(cliente.vehiculos[0].id)
+          : cliente && cliente.vehiculos.length === 0
+            ? VEHICULO_OTRO
+            : ""),
   );
   const [tamanoNuevo, setTamanoNuevo] = useState(v[CAMPO_TAMANO] ?? "");
   const precios = usePrecios({ lineas: [], descuento: "0.00", adelanto: inicio.adelanto, validaHasta: inicio.validaHasta, modo: "" });

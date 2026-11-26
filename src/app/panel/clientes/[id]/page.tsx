@@ -2,13 +2,15 @@ import type { Metadata } from "next";
 import { Alerta } from "@/componentes/panel/alerta";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Fragment, Suspense } from "react";
+import { Suspense } from "react";
 import { cn } from "cn";
 import { CalendarIcon, FileTextIcon } from "lucide-react";
 import { AvisoFlotante } from "@/componentes/panel/aviso-flotante";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
+import { TextoAccion } from "@/componentes/panel/texto-accion";
 import { Seccion } from "@/componentes/panel/cabecera-seccion";
+import { ListaDatos } from "@/componentes/panel/lista-datos";
 import { SeccionConEditar } from "@/componentes/panel/seccion-con-editar";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
@@ -111,8 +113,23 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
       <EncabezadoPagina
         volver={volver}
         titulo={c.nombre}
-        // Su WhatsApp debajo del nombre (C7, 18/11): más útil que "Clientes"
-        subtitulo={<span className="tabular-nums">{formatearWhatsApp(c.telefono)}</span>}
+        // Su WhatsApp debajo del nombre (C7, 18/11), con el botón para escribirle al lado (26/11, como en la reserva: el
+        // encabezado queda para cotizar y reservar)
+        subtitulo={
+          <span className="inline-flex items-center gap-1.5">
+            <span className="tabular-nums">{formatearWhatsApp(c.telefono)}</span>
+            <a
+              href={enlaceWhatsApp(c.telefono)}
+              target="_blank"
+              rel="noreferrer"
+              aria-label={`Escribir por WhatsApp a ${c.nombre}`}
+              title="Escribir por WhatsApp"
+              className={cn(buttonVariants({ variant: "accion", size: "icon-sm" }), "text-tinta")}
+            >
+              <IconoWhatsApp />
+            </a>
+          </span>
+        }
         estado={
           (!c.activo || debe) && (
             <span className="flex flex-wrap gap-2">
@@ -122,14 +139,25 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
             </span>
           )
         }
+        // Cotizar y reservar en el encabezado (26/11, como la ficha del vehículo): cotizar en rojo, que es donde empieza un
+        // trabajo (el menú va Cotizaciones, Agenda, Taller); la mayoría de las reservas salen de una cotización
         accion={
           <div className="flex flex-wrap gap-2">
             {!c.activo && <ReactivarCliente id={c.id} />}
-            {/* Enlace con forma de botón: abre el chat (cn: sin él, el borde del contorno no se ve) */}
-            <a href={enlaceWhatsApp(c.telefono)} target="_blank" rel="noreferrer" className={cn(buttonVariants({ variant: "outline" }))}>
-              <IconoWhatsApp />
-              Escribir por WhatsApp
-            </a>
+            {/* A un cliente desactivado no se le cotiza: se reactiva primero */}
+            {c.activo && cotiza && (
+              <Link href={conDesde(`/panel/cotizaciones/nueva?cliente=${c.id}`, desdeAqui)} className={cn(buttonVariants())}>
+                <FileTextIcon />
+                <TextoAccion corto="Cotizar">Nueva cotización</TextoAccion>
+              </Link>
+            )}
+            {/* La reserva directa lleva precios: la arma quien ve pagos (las demás salen de una cotización) */}
+            {verAgenda && c.activo && verPagos && (
+              <Link href={conDesde(`/panel/agenda/nueva?cliente=${c.id}`, desdeAqui)} className={cn(buttonVariants({ variant: "outline" }))}>
+                <CalendarIcon />
+                <TextoAccion corto="Reservar">Nueva reserva</TextoAccion>
+              </Link>
+            )}
             {c.activo && <MasCliente id={c.id} nombre={c.nombre} />}
           </div>
         }
@@ -152,24 +180,6 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
             titulo="Historia"
             sinRelleno
             className="@4xl:col-start-1 @4xl:row-start-1"
-            accion={
-              <div className="flex flex-wrap gap-1">
-                {/* La reserva directa lleva precios: la arma quien ve pagos (las demás salen de una cotización) */}
-                {verAgenda && c.activo && verPagos && (
-                  <Link href={conDesde(`/panel/agenda/nueva?cliente=${c.id}`, desdeAqui)} className={cn(buttonVariants({ variant: "accion" }))}>
-                    <CalendarIcon />
-                    Nueva reserva
-                  </Link>
-                )}
-                {/* A un cliente desactivado no se le cotiza: se reactiva primero */}
-                {c.activo && cotiza && (
-                  <Link href={conDesde(`/panel/cotizaciones/nueva?cliente=${c.id}`, desdeAqui)} className={cn(buttonVariants({ variant: "accion" }))}>
-                    <FileTextIcon />
-                    Nueva cotización
-                  </Link>
-                )}
-              </div>
-            }
           >
             <LineaDeTiempo
               hitos={hitos}
@@ -193,14 +203,8 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
               conValores.length === 0 ? (
                 <p className="text-tinta-suave">Sin correo, NIT ni notas.</p>
               ) : (
-                <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-6 gap-y-2">
-                  {conValores.map(([etiqueta, valor]) => (
-                    <Fragment key={etiqueta}>
-                      <dt className="text-tinta-suave">{etiqueta}</dt>
-                      <dd className="break-words whitespace-pre-line">{valor}</dd>
-                    </Fragment>
-                  ))}
-                </dl>
+                // La lista de datos de todo el panel (26/11; antes, una armada aquí, sin las líneas entre dato y dato)
+                <ListaDatos nombre="Datos del cliente" filas={conValores.map(([etiqueta, valor]) => [etiqueta, <span key={etiqueta} className="whitespace-pre-line">{valor}</span>])} />
               )
             }
           >
