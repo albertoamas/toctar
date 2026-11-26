@@ -93,16 +93,18 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
     conSaldo: verPagos,
     umbral: parametros.dias_cotizacion_sin_respuesta,
     desde: desdeAqui,
+    variosVehiculos: c.vehiculos.length > 1,
   });
   const hoy = fechaEnBolivia();
   const vehiculosActivos = c.vehiculos.filter((v) => v.activo).map((v) => ({ id: v.id, placa: v.placa }));
+  // Sin el WhatsApp (26/11): ya está debajo del nombre y en "Escribir por WhatsApp" (se edita en "Editar")
   const datos: [string, string | null][] = [
-    ["WhatsApp", formatearWhatsApp(c.telefono)],
     ["Correo", c.correo],
     ["NIT", c.nit],
     ["Razón social", c.razonSocial],
     ["Notas", c.notas],
   ];
+  const conValores = datos.filter(([, valor]) => valor?.trim());
 
   return (
     <>
@@ -188,16 +190,18 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
             tituloModal="Datos del cliente"
             lectura={
               // Solo lo que tiene valor: un dato vacío no ocupa una fila (se carga desde "Editar")
-              <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-6 gap-y-2">
-                {datos
-                  .filter(([, valor]) => valor?.trim())
-                  .map(([etiqueta, valor]) => (
+              conValores.length === 0 ? (
+                <p className="text-tinta-suave">Sin correo, NIT ni notas.</p>
+              ) : (
+                <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-6 gap-y-2">
+                  {conValores.map(([etiqueta, valor]) => (
                     <Fragment key={etiqueta}>
                       <dt className="text-tinta-suave">{etiqueta}</dt>
                       <dd className="break-words whitespace-pre-line">{valor}</dd>
                     </Fragment>
                   ))}
-              </dl>
+                </dl>
+              )
             }
           >
             <FormularioDatosCliente
@@ -231,7 +235,7 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
               {mantenimientos.length === 0 ? (
                 <p className="px-4 py-3 text-tinta-suave">No tiene mantenimientos programados.</p>
               ) : (
-                <ListaMantenimientos mantenimientos={mantenimientos} editables={c.activo} ve={{ ordenes: verOrdenes, agenda: verAgenda }} desde={desdeAqui} hoy={hoy} />
+                <ListaMantenimientos mantenimientos={mantenimientos} editables={c.activo} ve={{ ordenes: verOrdenes, agenda: verAgenda }} desde={desdeAqui} hoy={hoy} conPlaca={c.vehiculos.length > 1} />
               )}
             </Seccion>
           )}

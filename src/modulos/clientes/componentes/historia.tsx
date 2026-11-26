@@ -9,7 +9,7 @@ import { NOMBRE_ESTADO_TRABAJO, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reg
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import type { FilaCotizacion } from "@/modulos/cotizaciones/consultas/lista";
 import { bs, diasDesde, NOMBRE_ESTADO, sinRespuesta, TONO_ESTADO } from "@/modulos/cotizaciones/reglas";
-import { esOrden, rutaTrabajo } from "@/modulos/ordenes/reglas";
+import { esOrden, resumenServicios, rutaTrabajo } from "@/modulos/ordenes/reglas";
 import { estaPagada } from "@/modulos/pagos/reglas";
 
 // La historia de la ficha del cliente y de la del vehículo (C7 §5.6, 18/11): sus reservas y órdenes, y sus cotizaciones,
@@ -32,11 +32,13 @@ export function historia(props: {
   umbral: number;
   desde: string;
   duenoActual?: number;
+  /** En la del cliente: la placa en cada fila solo si tiene más de un vehículo (26/11: con uno, se repetía igual). */
+  variosVehiculos?: boolean;
 }): HitoHistoria[] {
-  const { reservas, cotizaciones, verOrdenes, conSaldo, umbral, desde, duenoActual } = props;
+  const { reservas, cotizaciones, verOrdenes, conSaldo, umbral, desde, duenoActual, variosVehiculos = true } = props;
   const hoy = new Date();
   // En la del cliente, la placa; en la del vehículo, "Con {cliente}" si fue con un dueño anterior
-  const placaDe = (placa: string | null) => (duenoActual === undefined ? (placa ?? undefined) : undefined);
+  const placaDe = (placa: string | null) => (duenoActual === undefined && variosVehiculos ? (placa ?? undefined) : undefined);
   const conOtro = (clienteId: number | null, nombre: string) => (duenoActual !== undefined && clienteId !== duenoActual ? [`Con ${nombre}`] : []);
   const deReservas: HitoHistoria[] = (reservas ?? []).map((r) => {
     // Lo que debe, solo cuando ya se cobra (lista o entregada): antes, un saldo es lo normal (el adelanto)
@@ -53,7 +55,8 @@ export function historia(props: {
         </>
       ),
       placa: placaDe(r.placa),
-      partes: [r.servicios, ...conOtro(r.clienteId, r.cliente)].filter(Boolean),
+      // Los servicios cortos, como en el Taller (26/11): el primero y "+ N más"
+      partes: [resumenServicios(r.servicios), ...conOtro(r.clienteId, r.cliente)].filter(Boolean),
       monto: conSaldo && r.saldo && r.estado !== "cancelado" ? `${mostrarMonto(r.saldo.total)} Bs` : undefined,
     };
   });
@@ -76,7 +79,7 @@ export function historia(props: {
           </>
         ),
         placa: placaDe(c.placa),
-        partes: [c.servicios, ...conOtro(c.clienteId, c.cliente)].filter(Boolean),
+        partes: [resumenServicios(c.listaServicios), ...conOtro(c.clienteId, c.cliente)].filter(Boolean),
         // Quien ve Cotizaciones ve sus precios (pedido 24)
         monto: bs(c.total),
       };

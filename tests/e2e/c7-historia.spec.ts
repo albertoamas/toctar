@@ -43,7 +43,8 @@ test("sin Pagos ni Cotizaciones la historia no muestra montos ni cotizaciones (R
 
   const historia = page.getByRole("list", { name: "Historia" });
   await expect(historia.getByRole("link")).toHaveCount(1);
-  await expect(historia).toContainText(placa);
+  // Con un solo vehículo, sin la placa en cada fila (26/11): la orden con su servicio
+  await expect(historia).toContainText("Orden");
   await expect(historia).not.toContainText(/Bs|Pagado|Debe /);
   await expect(historia).not.toContainText(`2077-${s}3`);
 });

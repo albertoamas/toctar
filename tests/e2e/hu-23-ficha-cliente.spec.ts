@@ -20,10 +20,10 @@ test("en la ficha los datos se leen y se editan en un modal; un teléfono de otr
   await page.goto(`/panel/clientes/${id}`, { waitUntil: "networkidle" });
 
   await expect(page.getByRole("link", { name: "Escribir por WhatsApp" })).toHaveAttribute("href", `https://wa.me/${telefono(info, 2)}`);
-  // En lectura, solo lo que tiene valor: sin correo, no hay fila de correo
+  // En lectura, solo lo que tiene valor: sin correo, no hay fila de correo. Sin el WhatsApp (26/11: está debajo del nombre)
   const datos = page.getByRole("region", { name: "Datos" });
-  await expect(datos).toContainText("WhatsApp");
-  await expect(datos).not.toContainText("Correo");
+  await expect(datos).toContainText("Sin correo, NIT ni notas.");
+  await expect(datos).not.toContainText("WhatsApp");
 
   const editar = page.getByRole("button", { name: "Editar datos del cliente" });
   await editar.click();
@@ -158,7 +158,7 @@ test("un cliente se desactiva desde «Más» con confirmación, deja de salir en
   await expect(page.getByRole("link", { name: nombre })).toBeVisible();
 });
 
-test("la historia junta reservas y cotizaciones, cada fila con su placa aunque tenga un solo vehículo", async ({ page }, info) => {
+test("la historia junta reservas y cotizaciones; con un solo vehículo, sin la placa en cada fila", async ({ page }, info) => {
   const s = sufijo(info);
   // Días lejos de hoy y propios de cada proyecto y reintento: no se mezclan con otras pruebas
   const dias = 1700 + (info.project.name === "celular" ? 0 : 10) + info.retry * 2;
@@ -167,13 +167,13 @@ test("la historia junta reservas y cotizaciones, cada fila con su placa aunque t
   await crearOrdenLista({ placa: `DA23${s}1`, dias, precio: 500, pagado: 100 });
   await ingresarComoDueno(page);
   await page.goto(`/panel/clientes/${id}`);
-  // Una sola historia (C7 §5.6): la cotización y la orden, cada una con la placa (es como se reconoce un trabajo en el
-  // taller, inventario-pantallas.md, cambio 4)
+  // Una sola historia (C7 §5.6): la cotización y la orden. Con un solo vehículo, sin la placa en cada fila (26/11: se
+  // repetía igual en todas, con la tarjeta de Vehículos al lado; antes, inventario-pantallas.md, cambio 4)
   const historia = page.getByRole("list", { name: "Historia" }).getByRole("link");
   await expect(historia).toHaveCount(2);
   const cotizacion = historia.filter({ hasText: `2023-${s}71` });
-  await expect(cotizacion).toContainText(`DA23${s}1`);
+  await expect(cotizacion).not.toContainText(`DA23${s}1`);
   const orden = historia.filter({ hasNotText: `2023-${s}71` });
-  await expect(orden).toContainText(`DA23${s}1`);
+  await expect(orden).not.toContainText(`DA23${s}1`);
   await expect(orden).toContainText("Debe 400 Bs");
 });
