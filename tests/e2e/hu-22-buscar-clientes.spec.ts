@@ -57,12 +57,12 @@ test("los desactivados no salen en la lista, pero se ven aparte", async ({ page 
   await ingresarComoDueno(page);
   await page.goto(`/panel/clientes?q=${encodeURIComponent(nombre)}`);
   await expect(page.getByText(`No hay clientes con «${nombre}».`)).toBeVisible();
-  // La píldora "Desactivados" de la barra (10/11; antes, un enlace al final)
-  await page.getByRole("link", { name: "Desactivados" }).click();
+  // Un enlace al final de la lista (26/11; del 10/11 al 26/11, una píldora en la barra)
+  await page.getByRole("link", { name: "Ver clientes desactivados" }).click();
   await expect(page.getByRole("list", { name: "Clientes desactivados" }).getByRole("link", { name: nombre })).toBeVisible();
   // La búsqueda se conserva al cambiar de vista
   await expect(page).toHaveURL(/q=.*ver=desactivados/);
-  await page.getByRole("link", { name: "Desactivados" }).click();
+  await page.getByRole("link", { name: "Ver los activos" }).click();
   await expect(page).not.toHaveURL(/ver=desactivados/);
   await expect(page.getByRole("searchbox", { name: "Buscar por nombre, teléfono o placa" })).toHaveValue(nombre);
 });

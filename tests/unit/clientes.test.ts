@@ -43,6 +43,8 @@ test("la fila de un cliente muestra hasta tres placas y, si se buscó una, la bu
   // Una búsqueda que no está en ninguna placa (un nombre) no cambia el orden; una que sí, la pasa adelante
   expect(placasEnFila(cinco, normalizarBusqueda("josé"))).toBe("1111AAA, 2222BBB, 3333CCC y 2 más");
   expect(placasEnFila(cinco, normalizarBusqueda("ee"))).toBe("5555EEE, 1111AAA, 2222BBB y 2 más");
+  // En el celular, dos (26/11): la buscada sigue primero
+  expect(placasEnFila(cinco, normalizarBusqueda("5555"), 2)).toBe("5555EEE, 1111AAA y 3 más");
 });
 
 test("lo que se sabe del vehículo: marca y modelo, año y color, en ese orden y sin vacíos", () => {
