@@ -1,5 +1,5 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import { abrirNuevoServicio, crearUsuario, ingresar, ingresarComoDueno, mostrarServicio, PERFIL_TALLER, PNG } from "./apoyo";
+import { abrirNuevoServicio, crearUsuario, ingresar, ingresarComoDueno, mostrarServicio, PERFIL_TALLER, PNG, cerrarAvisos } from "./apoyo";
 
 // HU-07 Servicios del sitio. Criterios: docs/09-pruebas/criterios-entrega-1.md (7.1 a 7.6). Desde la reorganización del
 // panel (C5 §0), el servicio se crea y se nombra en el catálogo; aquí se edita su página.
@@ -38,6 +38,8 @@ test("el dueño crea el servicio en el catálogo y completa su página: benefici
   // El nombre no se cambia aquí: es del catálogo, a un toque desde "Más"
   await expect(page.getByRole("textbox", { name: "Nombre del servicio" })).toHaveCount(0);
   const mas = page.getByRole("button", { name: "Más" });
+  // En el celular, el aviso de lo recién guardado tapa el menú (arriba): se cierra antes
+  await cerrarAvisos(page);
   await mas.click();
   await expect(page.getByRole("menuitem", { name: "Abrir en el catálogo" })).toBeVisible();
   // Sin resumen no se muestra en el sitio

@@ -274,7 +274,24 @@ export async function crearServicioPublicado(page: Page, nombre: string, resumen
 }
 
 /** Desde la ficha de un servicio del sitio: "Más" > mostrar u ocultar (pulido 13.19). */
+/**
+ * Cierra los avisos que quedan a la vista: en el celular van arriba, sobre el encabezado, y pueden tapar el menú "Más"
+ * de una ficha (26/11: hu-07 en el CI, "Mostrar en el sitio" debajo del aviso de lo recién guardado).
+ */
+export async function cerrarAvisos(page: Page): Promise<void> {
+  const avisos = page.locator("[data-sonner-toast]");
+  // Su X, con el teclado (con el mouse aparece al pasar por encima): uno por vez, el de adelante
+  for (let vuelta = 0; vuelta < 5 && (await avisos.count()) > 0; vuelta++) {
+    const cerrar = avisos.first().getByRole("button", { name: "Cerrar el aviso" });
+    await cerrar.focus();
+    await page.keyboard.press("Enter");
+    await expect(avisos).toHaveCount(0, { timeout: 2000 }).catch(() => {});
+  }
+  await expect(avisos).toHaveCount(0);
+}
+
 export async function mostrarServicio(page: Page, mostrar: boolean): Promise<void> {
+  await cerrarAvisos(page);
   await page.getByRole("button", { name: "Más" }).click();
   await page.getByRole("menuitem", { name: mostrar ? "Mostrar en el sitio" : "Ocultar del sitio" }).click();
   await expect(page.getByText(mostrar ? "En el sitio" : "Oculto", { exact: true })).toBeVisible();

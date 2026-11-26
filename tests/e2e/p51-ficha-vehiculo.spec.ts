@@ -39,16 +39,17 @@ test("desde la ficha del cliente se abre la del vehículo, con su dueño y su hi
   await expect(historial).toContainText(`Con ${a.anterior}`);
   // "Nueva reserva" llega con el cliente y el vehículo elegidos
   await expect(page.getByRole("link", { name: "Nueva reserva" })).toHaveAttribute("href", new RegExp(`/panel/agenda/nueva\\?cliente=${a.actualId}&vehiculo=${a.vehiculoId}`));
-  // "Nueva cotización" (26/11) llega al paso del vehículo con este ya marcado
   const cotizar = page.getByRole("link", { name: "Nueva cotización" });
   await expect(cotizar).toHaveAttribute("href", new RegExp(`/panel/cotizaciones/nueva\\?cliente=${a.actualId}&vehiculo=${a.vehiculoId}`));
   const ficha = page.url();
-  await cotizar.click();
-  await expect(page.getByRole("radio", { name: new RegExp(a.placa) })).toHaveAttribute("aria-checked", "true");
-  await page.goto(ficha);
-  // "Volver" a la ficha del dueño
+  // "Volver" a la ficha del dueño. Antes de ir a cotizar: "Volver" usa el historial, y después de otra pantalla y un
+  // goto a la ficha podía llevar a la lista de Clientes (26/11, en el CI)
   await page.getByRole("link", { name: /^Volver/ }).first().click();
   await expect(page).toHaveURL(new RegExp(`/panel/clientes/${a.actualId}(?:\\?|$)`));
+  // "Nueva cotización" (26/11) llega al paso del vehículo con este ya marcado
+  await page.goto(ficha);
+  await page.getByRole("link", { name: "Nueva cotización" }).click();
+  await expect(page.getByRole("radio", { name: new RegExp(a.placa) })).toHaveAttribute("aria-checked", "true");
 });
 
 test("la dirección de antes del cambio de dueño lleva a la de hoy, y la placa se busca en Clientes", async ({ page }, info) => {
