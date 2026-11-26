@@ -155,7 +155,8 @@ test("vencidos y próximos; avisar, no le interesa y reservar (y al cancelar la 
   const delCliente = page.getByRole("list", { name: "Mantenimientos" }).getByRole("listitem");
   await expect(delCliente).toContainText("Pulido y nano cerámico");
   await expect(delCliente).toContainText("Reservado");
-  await expect(delCliente.getByRole("link", { name: "Ver la reserva" })).toHaveAttribute("href", conVolver(`/panel/agenda/${reservaId}`));
+  // La fila entera abre su reserva (26/11)
+  await expect(delCliente.getByRole("link", { name: "Pulido y nano cerámico: ver la reserva" })).toHaveAttribute("href", conVolver(`/panel/agenda/${reservaId}`));
 
   // Si la reserva se cancela, el mantenimiento vuelve a la lista como estaba: avisado
   await page.goto(`/panel/agenda/${reservaId}`);
@@ -266,8 +267,10 @@ test("en la ficha del cliente: agregar un mantenimiento anterior al sistema, edi
   await cargar();
   await expect(page.getByText("Mantenimiento agregado.")).toBeVisible();
   await expect(agregar).toHaveCount(0);
-  const fila = page.getByRole("list", { name: "Mantenimientos" }).getByRole("listitem").filter({ hasText: placa });
-  await expect(fila).toContainText("cada 3 meses");
+  // Un solo vehículo: la fila sin su placa (26/11); es la única de su lista
+  const fila = page.getByRole("list", { name: "Mantenimientos" }).getByRole("listitem");
+  await expect(fila).toHaveCount(1);
+  await expect(fila).toContainText(/cada 3 meses/i);
   await expect(fila).toContainText("Por avisar");
   // El mismo otra vez no se duplica
   await cargar();
@@ -286,7 +289,7 @@ test("en la ficha del cliente: agregar un mantenimiento anterior al sistema, edi
   await editar.getByLabel("Próximo mantenimiento").fill(proximo);
   await editar.getByRole("button", { name: "Guardar plan" }).click();
   await expect(page.getByText("Plan guardado.")).toBeVisible();
-  await expect(fila).toContainText("cada 2 meses");
+  await expect(fila).toContainText(/cada 2 meses/i);
   const [plan] = await consultar<{ cada: number; fecha: string; estado: string }>(
     `select intervalo_meses as cada, to_char(fecha_programada, 'YYYY-MM-DD') as fecha, estado from recordatorio_mantenimiento
      where vehiculo_id = (select id from vehiculo where placa = $1)`,

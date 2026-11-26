@@ -36,8 +36,8 @@ export async function reservasDeConsulta(consultaId: number): Promise<ReservaCor
 
 export type ReservaDelCliente = ReservaCorta & {
   saldo: Saldo | null;
-  /** Sus servicios, en su orden: "Pulido y nano cerámico, Pulido de vidrios" (la historia de la ficha, C7 §5.6). */
-  servicios: string;
+  /** Sus servicios, en su orden (la historia de la ficha, C7 §5.6). */
+  servicios: string[];
 };
 
 /**
@@ -90,6 +90,6 @@ async function reservasDonde(donde: SQL, conMontos: boolean): Promise<ReservaDel
   return [...proximas, ...pasadas].map(({ descuento, ...r }) => ({
     ...r,
     saldo: conMontos ? calcularSaldo(precios.get(r.id) ?? [], descuento, pagosPor.get(r.id) ?? []) : null,
-    servicios: (servicios.get(r.id) ?? []).join(", "),
+    servicios: servicios.get(r.id) ?? [],
   }));
 }

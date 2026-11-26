@@ -317,7 +317,8 @@ test("desde la ficha del cliente: llega elegido, con su vehículo marcado, y la 
   await expect(page.getByRole("region", { name: "Precio" })).toContainText("En persona");
 
   await page.goto(`/panel/clientes/${id}`);
-  await expect(page.getByRole("list", { name: "Historia" }).getByRole("link").filter({ hasText: `CF25${s}1` })).toBeVisible();
+  // Con un solo vehículo, la fila sin la placa (26/11): la cotización
+  await expect(page.getByRole("list", { name: "Historia" }).getByRole("link").filter({ hasText: /^Cotización/ })).toBeVisible();
 });
 
 test("nueva versión: el mismo número, la anterior queda reemplazada y una vieja lleva a la vigente", async ({ page }, info) => {
