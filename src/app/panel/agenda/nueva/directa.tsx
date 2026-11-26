@@ -1,8 +1,6 @@
 import Link from "next/link";
-import { buttonVariants } from "@/componentes/ui/button";
 import { cn } from "cn";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
-import { PieFormulario } from "@/componentes/panel/pie-formulario";
 import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { fechaCorta } from "@/lib/fechas";
 import { puedeVerModulo } from "@/lib/permisos";
@@ -65,7 +63,17 @@ export async function ReservaDirecta({ ctx, clienteId }: { ctx: Contexto; client
   const cambiarVehiculo = recordatorio ? undefined : direccion({ cliente: d.cliente.id });
   // "Otro vehículo": quien ve Clientes y arma reservas sin cotización (uno nuevo no tiene cotizaciones para reservar)
   const registra = conPagos && puedeVerModulo(usuario, "clientes") && !recordatorio;
-  if (!d.vehiculo && registra && texto("vehiculo") === "nuevo") return <ReservaConNuevos ctx={ctx} clienteId={d.cliente.id} nombreCliente={d.cliente.nombre} />;
+  // Quien registra elige el vehículo en el formulario (24/11), con "Otro vehículo" que se llena ahí mismo
+  if (!d.vehiculo && registra)
+    return (
+      <ReservaConNuevos
+        ctx={ctx}
+        clienteId={d.cliente.id}
+        nombreCliente={d.cliente.nombre}
+        vehiculos={d.vehiculos.map((v) => ({ id: v.id, placa: v.placa, detalle: [...v.detalle, `Tamaño: ${v.tamano}`].join(" · ") }))}
+        otroMarcado={texto("vehiculo") === "nuevo" || d.vehiculos.length === 0}
+      />
+    );
 
   // Paso 2: el vehículo, siempre (20/11): en tarjetas, como en Nueva cotización, con "Otro vehículo" para registrarlo
   // en el paso siguiente (quien ve Clientes). Sin vehículos, solo esa tarjeta
@@ -75,12 +83,13 @@ export async function ReservaDirecta({ ctx, clienteId }: { ctx: Contexto; client
         <Encabezado volver={volver} />
         {indicador(PASO_VEHICULO, [cambiarCliente && { href: cambiarCliente }])}
         <ParaQuien nombre={d.cliente.nombre} vehiculo={null} />
-        <Seccion id="vehiculo" titulo="Vehículo" sinRelleno>
-          {d.vehiculos.length === 0 && !registra ? (
+        {d.vehiculos.length === 0 && !registra ? (
+          <Seccion id="vehiculo" titulo="Vehículo" sinRelleno>
             <EstadoVacio>
               {d.cliente.nombre} no tiene vehículos activos. Pídele al dueño que le agregue uno en su ficha o que arme la reserva.
             </EstadoVacio>
-          ) : (
+          </Seccion>
+        ) : (
             <ElegirVehiculoReserva
               vehiculos={d.vehiculos.map((v) => ({
                 id: v.id,
@@ -89,17 +98,9 @@ export async function ReservaDirecta({ ctx, clienteId }: { ctx: Contexto; client
                 href: direccion({ cliente: d.cliente.id, vehiculo: v.id }),
               }))}
               otro={registra ? direccion({ cliente: d.cliente.id, vehiculo: "nuevo" }) : null}
+              // "Atrás" en todos los pasos (20/11): aquí, a elegir otro cliente, junto a "Siguiente" en el pie
+              atras={cambiarCliente}
             />
-          )}
-        </Seccion>
-        {/* "Atrás" en todos los pasos (20/11): aquí, a elegir otro cliente. En el mismo pie que los demás pasos (fijo abajo
-            en el celular), no suelto bajo la tarjeta */}
-        {cambiarCliente && (
-          <PieFormulario>
-            <Link href={cambiarCliente} className={buttonVariants({ variant: "outline" })}>
-              Atrás
-            </Link>
-          </PieFormulario>
         )}
       </>
     );
@@ -182,7 +183,25 @@ export async function ReservaDirecta({ ctx, clienteId }: { ctx: Contexto; client
  * La reserva con un cliente nuevo (`clienteId` null, desde "Cliente nuevo") o con otro vehículo de un cliente registrado
  * (20/11, como en Nueva cotización): sus datos son los primeros pasos del formulario y se registran con la reserva.
  */
-export async function ReservaConNuevos({ ctx, clienteId, nombreCliente }: { ctx: Contexto; clienteId: number | null; nombreCliente?: string }) {
+export async function ReservaConNuevos({
+  ctx,
+  clienteId,
+  nombreCliente,
+  clientes,
+  nuevoMarcado,
+  vehiculos,
+  otroMarcado,
+}: {
+  ctx: Contexto;
+  clienteId: number | null;
+  nombreCliente?: string;
+  /** Sin cliente: la lista para elegirlo (24/11). */
+  clientes?: { opciones: { id: number; titulo: string; detalle: string }[]; nota: string | null };
+  nuevoMarcado?: boolean;
+  /** Con un cliente registrado: sus vehículos para elegir (24/11). */
+  vehiculos?: { id: number; placa: string; detalle: string }[];
+  otroMarcado?: boolean;
+}) {
   const { conPagos, volver, origen, hoy, fechaInicial, direccion, clave } = ctx;
   const [tamanos, catalogo] = await Promise.all([tamanosActivos(), catalogoVehiculos()]);
   const opcionesPor = await opcionesPorTamano(tamanos.map((t) => t.id));
@@ -206,6 +225,11 @@ export async function ReservaConNuevos({ ctx, clienteId, nombreCliente }: { ctx:
             // "Buscar un cliente registrado" o, con un cliente registrado, "Atrás" a sus vehículos
             volverAElegir: clienteId === null ? direccion({}) : direccion({ cliente: clienteId }),
             conCliente: direccion({ cliente: 0 }),
+            conVehiculo: clienteId === null ? undefined : direccion({ cliente: clienteId, vehiculo: 0 }),
+            clientes,
+            nuevoMarcado,
+            vehiculos,
+            otroMarcado,
           },
           pasoInicial: clienteId === null ? PASO_CLIENTE : PASO_VEHICULO,
         }}

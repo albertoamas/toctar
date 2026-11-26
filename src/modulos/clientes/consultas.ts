@@ -40,14 +40,14 @@ function coincideBusqueda(q: string) {
  * Clientes que coinciden con la búsqueda, para elegir uno (Nueva cotización). Sin búsqueda, los más recientes. Trae uno
  * más del límite para saber si hay más (`hayMas`).
  */
-export async function buscarClientes(q: string, desactivados = false, excepto?: number): Promise<{ clientes: FilaCliente[]; hayMas: boolean }> {
+export async function buscarClientes(q: string, desactivados = false, excepto?: number, limite = LIMITE_RESULTADOS): Promise<{ clientes: FilaCliente[]; hayMas: boolean }> {
   const filas = await db
     .select({ id: cliente.id, nombre: cliente.nombre, telefono: cliente.telefono })
     .from(cliente)
     .where(and(eq(cliente.activo, !desactivados), coincideBusqueda(q), excepto ? ne(cliente.id, excepto) : undefined))
     .orderBy(desc(cliente.updatedAt), desc(cliente.id))
-    .limit(LIMITE_RESULTADOS + 1);
-  return { clientes: await conPlacas(filas.slice(0, LIMITE_RESULTADOS)), hayMas: filas.length > LIMITE_RESULTADOS };
+    .limit(limite + 1);
+  return { clientes: await conPlacas(filas.slice(0, limite)), hayMas: filas.length > limite };
 }
 
 /**

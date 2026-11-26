@@ -5,7 +5,8 @@ import { cn } from "cn";
 // En qué paso está un flujo del panel: los pasos del trabajo (pedido 31), la nueva cotización (pedido 40) y la nueva
 // reserva (pedido 41). Barras: los hechos en gris oscuro, el actual en tinta (negro) y los que faltan en el borde. Sin
 // azul (20/11): es el color de estado de "En proceso"; el rojo es del botón principal. En el celular, "Paso 2 de 3:
-// Vehículo" sobre las barras; desde @xl, el nombre de cada paso debajo de su barra.
+// Vehículo" sobre las barras; desde @xl, el nombre de cada paso debajo de su barra. A 14 px (24/11: a 12 px y en gris
+// claro se veía como otra letra, más chica que el resto de la pantalla).
 // Recorrido visual del 20/11: un paso hecho con `destinos` se toca para volver a él (un enlace o una función). Así la
 // pantalla muestra solo el paso que se hace, sin las tarjetas de lo ya elegido con su "Cambiar". Sin un "‹ Vehículo"
 // escrito arriba en el celular (20/11, a pedido del dueño): repetía el "Atrás" del pie.
@@ -16,7 +17,7 @@ export type DestinoPaso = { href: Route } | { alTocar: () => void };
 export function PasosFlujo({ pasos, actual, etiqueta, destinos }: { pasos: readonly string[]; actual: number; etiqueta: string; destinos?: readonly (DestinoPaso | undefined)[] }) {
   return (
     <nav aria-label={etiqueta} className="flex flex-col gap-2">
-      <p className="text-sm text-tinta-suave @xl:hidden" aria-hidden>
+      <p className="text-sm text-tinta-media @xl:hidden" aria-hidden>
         Paso {actual + 1} de {pasos.length}: <span className="font-semibold text-tinta">{pasos[actual]}</span>
       </p>
       <ol className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${pasos.length}, minmax(0, 1fr))` }}>
@@ -24,7 +25,7 @@ export function PasosFlujo({ pasos, actual, etiqueta, destinos }: { pasos: reado
           const contenido = (
             <>
               <span aria-hidden className={cn("h-1.5 rounded-full", i < actual ? "bg-tinta-suave" : i === actual ? "bg-tinta" : "bg-border")} />
-              <span className={cn("truncate text-xs @max-xl:sr-only", i === actual ? "font-semibold text-tinta" : i < actual ? "text-tinta-media" : "text-tinta-suave")}>
+              <span className={cn("truncate text-sm @max-xl:sr-only", i === actual ? "font-semibold text-tinta" : i < actual ? "font-medium text-tinta-media" : "text-tinta-suave")}>
                 {nombre}
                 {i < actual && <span className="sr-only">, hecho</span>}
               </span>

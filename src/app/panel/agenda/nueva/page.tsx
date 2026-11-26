@@ -8,7 +8,7 @@ import { fechaEnBolivia, fechaExiste } from "@/lib/fechas";
 import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { PASO_CLIENTE, pasosNuevaReserva } from "@/modulos/agenda/pasos-reserva";
-import { ElegirCliente } from "@/modulos/clientes/componentes/elegir-cliente";
+import { clientesParaElegir, ElegirCliente } from "@/modulos/clientes/componentes/elegir-cliente";
 import { leerDesde, PARAMETRO_VOLVER, volverDesde } from "@/lib/volver";
 import { ReservaDesdeCotizacion } from "./desde-cotizacion";
 import { ReservaConNuevos, ReservaDirecta } from "./directa";
@@ -86,7 +86,8 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
   // tiene cotizaciones para reservar)
   const registra = conPagos && puedeVerModulo(usuario, "clientes");
   // "Cliente nuevo": sus datos y los de su vehículo son los primeros pasos del formulario
-  if (texto("nuevo") === "1" && registra) return <ReservaConNuevos ctx={ctx} clienteId={null} />;
+  // Quien registra clientes elige en el formulario (24/11): la lista con "Cliente nuevo" que se llena ahí mismo
+  if (registra && !numero("cliente")) return <ReservaConNuevos ctx={ctx} clienteId={null} clientes={await clientesParaElegir(texto("q"), true)} nuevoMarcado={texto("nuevo") === "1"} />;
 
   // Paso 1: el cliente. Sin Pagos (no arma reservas sin cotización) también lo elige, para reservar una de sus
   // cotizaciones

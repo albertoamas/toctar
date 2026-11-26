@@ -3,13 +3,12 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { Cargando } from "@/componentes/panel/cargando";
+import { ParaQuien } from "@/componentes/panel/para-quien";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { fechaEnBolivia } from "@/lib/fechas";
 import { exigirAccion } from "@/lib/sesion";
-import { formatearWhatsApp } from "@/lib/whatsapp";
-import { ResumenClienteVehiculo } from "@/modulos/clientes/componentes/resumen-cliente-vehiculo";
 import { FormularioNuevaVersion } from "@/modulos/cotizaciones/componentes/formulario-cotizacion";
 import { datosNuevaVersion } from "@/modulos/cotizaciones/consultas/versiones";
 import { NOMBRE_ESTADO } from "@/modulos/cotizaciones/reglas";
@@ -50,21 +49,17 @@ async function Contenido({ params, searchParams }: Pick<PageProps<"/panel/cotiza
 
   return (
     <>
-      <div className="flex flex-col gap-2">
-        <EncabezadoPagina titulo={datos.desde ? `Versión ${datos.desde.version + 1}` : "Nueva versión"} volver={{ href: volver, texto: datos.desde ? `Cotización ${datos.desde.numero}` : "Cotización" }} />
-        {datos.desde && <p className="text-sm text-tinta-suave">La versión {datos.desde.version} queda como estaba, con su PDF.</p>}
-      </div>
+      {/* Recorrido visual del 24/11, como Nueva cotización: "Nueva versión" con la cotización y lo que pasa con la anterior
+          debajo, y para quién en una línea (era una tarjeta grande arriba del formulario) */}
+      <EncabezadoPagina
+        titulo="Nueva versión"
+        subtitulo={datos.desde ? `Cotización ${datos.desde.numero} · será la versión ${datos.desde.version + 1}; la ${datos.desde.version} queda como estaba, con su PDF` : undefined}
+        volver={{ href: volver, texto: datos.desde ? `Cotización ${datos.desde.numero}` : "Cotización" }}
+      />
 
-      {/* Para quién, en su tarjeta como en Nueva cotización (pulido final, 10/11: era una línea suelta bajo el título), también
-          cuando no se puede hacer la versión; sin "Cambiar": una versión es de la misma cotización */}
       {/* Con el formulario, en la computadora va al costado con el total (FormularioNuevaVersion) */}
       <div className={datos.estado === "cotizado" && datos.desde && datos.opciones.length > 0 ? "@4xl:hidden" : undefined}>
-        <ResumenClienteVehiculo
-          id="version-para"
-          titulo="Cotización para"
-          cliente={{ nombre: datos.cliente, detalle: formatearWhatsApp(datos.telefono) }}
-          vehiculo={{ placa: datos.placa ?? "Sin registrar", detalle: datos.detalle, tamano: datos.tamano }}
-        />
+        <ParaQuien etiqueta="Cotización para" nombre={datos.cliente} placa={datos.placa ?? "Sin registrar"} tamano={datos.tamano} />
       </div>
 
       {datos.estado !== "cotizado" ? (

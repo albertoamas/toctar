@@ -13,6 +13,9 @@ import { LineasServicio, type Linea } from "./lineas-servicio";
 import { ANCHO_DATO } from "@/componentes/panel/anchos";
 import { OpcionesEnTarjetas } from "@/componentes/panel/opciones-en-tarjetas";
 import { FilaResumen } from "@/componentes/panel/con-resumen";
+import { Button } from "@/componentes/ui/button";
+import { fechaConMes } from "@/lib/fechas";
+import { CheckIcon, PencilIcon } from "lucide-react";
 
 // Lo que lleva cada versión de una cotización (pedido 23): los servicios con su precio, el total, cómo se cotizó y las
 // condiciones del PDF. Lo comparten la nueva cotización y la versión nueva. Todo controlado: React reinicia el
@@ -21,6 +24,10 @@ import { FilaResumen } from "@/componentes/panel/con-resumen";
 // sin tocar no cuenta: `conFilaLista`) y "Agrega al menos un servicio." se va al elegir uno; el descuento, que casi no
 // se usa, y las condiciones, que vienen de Configuración, van plegados (las condiciones, diciendo cuáles van al PDF). El
 // total va en el pie, en todos los tamaños; el desglose, solo si hay descuento.
+// Recorrido visual del 24/11: «¿Cómo se cotizó?» dentro de la tarjeta de condiciones (era una tarjeta para dos botones);
+// el total una sola vez (en el pie y, en la computadora, en el resumen del costado: ya no también en la tarjeta); y el
+// adelanto y la validez en una línea con sus valores en negrita y «Cambiar», que abre los campos. A la vista siempre
+// (hallazgo 8, 15/11: plegados detrás de un botón se pasaban por alto), y abiertos solos si tienen un error.
 
 type Inicial = { lineas: { varianteId: number; precio: string }[]; descuento: string; adelanto: string; validaHasta: string; modo: Modo | "" };
 
@@ -57,6 +64,8 @@ type Props = {
 };
 
 export function CamposPrecio({ precios: p, opciones, errores: e, hoy, anterior }: Props) {
+  const [cambiando, setCambiando] = useState(false);
+  const abiertas = cambiando || !!e.adelanto || !!e.validaHasta;
   return (
     <>
       <SeccionFormulario titulo="Servicios" claseContenido="gap-4">
@@ -69,41 +78,29 @@ export function CamposPrecio({ precios: p, opciones, errores: e, hoy, anterior }
         {!opciones && e.lineas && <MensajeError id="lineas-error">{e.lineas}</MensajeError>}
       </SeccionFormulario>
 
-      {/* En tarjetas que se tocan enteras, como "¿Cómo pagó?" (C7 §5.2). Solo su nombre (19/11, a pedido del dueño): que
-          "Por fotos" es un estimado ya lo dice el PDF */}
-      <SeccionFormulario titulo="¿Cómo se cotizó?" claseContenido="gap-3">
+      {/* El total y lo que va al PDF, juntos en su tarjeta (pulido final, 10/11: plegados sueltos debajo de la última
+          tarjeta no se sabía a qué pertenecían). El descuento, que casi no se usa, y las condiciones, que vienen de
+          Configuración, plegados */}
+      <SeccionFormulario titulo="Condiciones" claseContenido="gap-5">
+        {/* En tarjetas que se tocan enteras, como "¿Cómo pagó?" (C7 §5.2). Solo su nombre (19/11, a pedido del dueño): que
+            "Por fotos" es un estimado ya lo dice el PDF */}
         <OpcionesEnTarjetas
           id="modo"
           titulo="¿Cómo se cotizó?"
-          tituloOculto
           nombre="modo"
           valor={p.modo}
           cambiar={p.setModo}
           opciones={MODOS.map((m) => ({ valor: m, texto: NOMBRE_MODO[m] }))}
           error={e.modo}
-          className="grid-cols-2"
+          className="grid-cols-2 sm:max-w-md"
         />
-      </SeccionFormulario>
-
-      {/* El total y lo que va al PDF, juntos en su tarjeta (pulido final, 10/11: plegados sueltos debajo de la última
-          tarjeta no se sabía a qué pertenecían). El descuento, que casi no se usa, y las condiciones, que vienen de
-          Configuración, plegados */}
-      <SeccionFormulario titulo="Total y condiciones" claseContenido="gap-4">
-        {/* En la computadora el total va en el resumen del costado (ResumenPrecios, C7 §5.2); aquí, en lo angosto */}
-        <div className="flex flex-col gap-0.5 @4xl:hidden">
-          {/* Solo el total se anuncia al cambiar: la comparación aparece y se va */}
-          <p className="flex items-baseline justify-between gap-4" aria-live="polite">
-            <span className="font-semibold">Total</span>
-            <span className="text-lg font-bold tabular-nums">{bs(p.totales.total)}</span>
+        {/* En una versión nueva, con cuánto se compara al cambiar los precios (en la computadora, en el resumen) */}
+        {anterior && anterior.total !== p.totales.total && (
+          <p className="text-sm text-tinta-suave tabular-nums @4xl:hidden">
+            Versión {anterior.version}: {bs(anterior.total)}
+            {anterior.quitados > 0 && `, con ${anterior.quitados === 1 ? "un servicio que ya no se ofrece" : `${anterior.quitados} servicios que ya no se ofrecen`}`}
           </p>
-          {/* En una versión nueva, con cuánto se compara al cambiar los precios */}
-          {anterior && anterior.total !== p.totales.total && (
-            <p className="text-sm text-tinta-suave tabular-nums">
-              Versión {anterior.version}: {bs(anterior.total)}
-              {anterior.quitados > 0 && `, con ${anterior.quitados === 1 ? "un servicio que ya no se ofrece" : `${anterior.quitados} servicios que ya no se ofrecen`}`}
-            </p>
-          )}
-        </div>
+        )}
         <MasDatos texto="Agregar descuento" titulo="Descuento" abierto={!!p.descuento || !!e.descuento}>
           <Campo id="descuento" etiqueta="Monto del descuento" error={e.descuento}>
             <CampoMonto id="descuento" name="descuento" value={p.descuento} onChange={(ev) => p.setDescuento(ev.target.value)} aria-invalid={!!e.descuento} aria-describedby={e.descuento ? "descuento-error" : undefined} />
@@ -118,16 +115,46 @@ export function CamposPrecio({ precios: p, opciones, errores: e, hoy, anterior }
             </dl>
           )}
         </MasDatos>
-        {/* Siempre a la vista (hallazgo 8 de la prueba en celulares, 15/11): el adelanto y la validez se revisan en cada
-            cotización, y plegados detrás de "Cambiar adelanto o validez" se pasaban por alto */}
-        <div className="grid gap-5 sm:grid-cols-2">
-          <Campo id="adelanto" etiqueta="Adelanto sugerido" opcional error={e.adelanto}>
-            <CampoMonto id="adelanto" name="adelanto" value={p.adelanto} onChange={(ev) => p.setAdelanto(ev.target.value)} aria-invalid={!!e.adelanto} aria-describedby={e.adelanto ? "adelanto-error" : undefined} />
-          </Campo>
-          <Campo id="validaHasta" etiqueta="Válida hasta" error={e.validaHasta}>
-            <Input id="validaHasta" name="validaHasta" type="date" min={hoy} value={p.validaHasta} onChange={(ev) => p.setValidaHasta(ev.target.value)} aria-invalid={!!e.validaHasta} aria-describedby={e.validaHasta ? "validaHasta-error" : undefined} className={ANCHO_DATO.fecha} />
-          </Campo>
-        </div>
+        {/* El adelanto y la validez, siempre a la vista con sus valores (hallazgo 8, 15/11); los campos, con «Cambiar» */}
+        {abiertas ? (
+          <div className="flex flex-col gap-3">
+            <div className="grid gap-5 sm:grid-cols-2">
+              <Campo id="adelanto" etiqueta="Adelanto sugerido" opcional error={e.adelanto}>
+                <CampoMonto id="adelanto" name="adelanto" value={p.adelanto} onChange={(ev) => p.setAdelanto(ev.target.value)} aria-invalid={!!e.adelanto} aria-describedby={e.adelanto ? "adelanto-error" : undefined} />
+              </Campo>
+              <Campo id="validaHasta" etiqueta="Válida hasta" error={e.validaHasta}>
+                <Input id="validaHasta" name="validaHasta" type="date" min={hoy} value={p.validaHasta} onChange={(ev) => p.setValidaHasta(ev.target.value)} aria-invalid={!!e.validaHasta} aria-describedby={e.validaHasta ? "validaHasta-error" : undefined} className={ANCHO_DATO.fecha} />
+              </Campo>
+            </div>
+            {!e.adelanto && !e.validaHasta && (
+              <div>
+                <Button type="button" variant="accion" onClick={() => setCambiando(false)}>
+                  <CheckIcon />
+                  Listo
+                </Button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-border pt-4">
+            <input type="hidden" name="adelanto" value={p.adelanto} />
+            <input type="hidden" name="validaHasta" value={p.validaHasta} />
+            <p className="flex flex-wrap gap-x-3 gap-y-1 text-sm">
+              <span>
+                <span className="text-tinta-suave">Adelanto sugerido </span>
+                <span className="font-semibold tabular-nums">{p.adelanto && leerMontoOCero(p.adelanto) !== "0.00" ? `${p.adelanto} Bs` : "sin adelanto"}</span>
+              </span>
+              <span>
+                <span className="text-tinta-suave">Vale hasta el </span>
+                <span className="font-semibold">{p.validaHasta ? fechaConMes(p.validaHasta, hoy) : "sin fecha"}</span>
+              </span>
+            </p>
+            <Button type="button" variant="accion" onClick={() => setCambiando(true)}>
+              <PencilIcon />
+              Cambiar<span className="sr-only"> el adelanto o la validez</span>
+            </Button>
+          </div>
+        )}
       </SeccionFormulario>
     </>
   );
@@ -138,15 +165,23 @@ export function CamposPrecio({ precios: p, opciones, errores: e, hoy, anterior }
  * el descuento si hay, el total (que se anuncia al cambiar), el adelanto sugerido y, en una versión nueva, con cuánto se
  * compara.
  */
-export function ResumenPrecios({ precios: p, anterior }: { precios: Precios; anterior?: Props["anterior"] }) {
+export function ResumenPrecios({ precios: p, anterior, opciones }: { precios: Precios; anterior?: Props["anterior"]; /** Para nombrar los servicios elegidos (24/11). */ opciones?: OpcionServicio[] | null }) {
   const conDescuento = p.totales.descuento !== "0.00";
+  // Los servicios elegidos con su precio, como en Nueva reserva (24/11)
+  const elegidos = p.lineas.flatMap((l) => {
+    const o = opciones?.find((x) => x.varianteId === l.varianteId);
+    return o ? [{ nombre: o.descripcion, precio: leerMonto(l.precio) ?? "0" }] : [];
+  });
   return (
     <>
       <dl className="flex flex-col gap-2">
-        {conDescuento && <FilaResumen etiqueta="Subtotal" valor={bs(p.totales.subtotal)} />}
+        {elegidos.map((l, i) => (
+          <FilaResumen key={i} etiqueta={l.nombre} valor={bs(l.precio)} />
+        ))}
+        {conDescuento && <FilaResumen etiqueta="Subtotal" valor={bs(p.totales.subtotal)} separada={elegidos.length > 0} />}
         {conDescuento && <FilaResumen etiqueta="Descuento" valor={`− ${bs(p.totales.descuento)}`} />}
         <div aria-live="polite">
-          <FilaResumen etiqueta="Total" valor={bs(p.totales.total)} fuerte separada={conDescuento} />
+          <FilaResumen etiqueta="Total" valor={bs(p.totales.total)} fuerte separada={conDescuento || elegidos.length > 0} />
         </div>
         {p.adelanto && <FilaResumen etiqueta="Adelanto sugerido" valor={`${p.adelanto} Bs`} suave />}
       </dl>
@@ -155,12 +190,15 @@ export function ResumenPrecios({ precios: p, anterior }: { precios: Precios; ant
   );
 }
 
-/** El total a la vista en el pie fijo del celular, junto al botón. "Total y condiciones" ya lo anuncia (aria-live). */
+/**
+ * El total, en el pie junto al botón, hasta que el resumen del costado lo muestra (en la computadora, @4xl). Es el único
+ * total del formulario en lo angosto (24/11): se anuncia al cambiar.
+ */
 export function TotalEnPie({ total }: { total: string }) {
   return (
-    // Después de los botones, a la derecha, sin la palabra "Total" para que entre en el renglón (20/11)
-    <p className="order-last ml-auto flex items-baseline gap-2 sm:hidden" aria-hidden>
-      <span className="sr-only">Total</span>
+    // Después de los botones, a la derecha; en el celular sin la palabra "Total" para que entre en el renglón (20/11)
+    <p className="order-last ml-auto flex items-baseline gap-2 @4xl:hidden" aria-live="polite">
+      <span className="text-tinta-suave max-sm:sr-only">Total</span>
       <span className="text-lg font-bold tabular-nums">{bs(total)}</span>
     </p>
   );

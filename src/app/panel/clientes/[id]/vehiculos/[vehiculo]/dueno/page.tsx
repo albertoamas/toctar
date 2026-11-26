@@ -106,7 +106,7 @@ async function Contenido({ params, searchParams }: Pick<PageProps<"/panel/client
         {encabezado}
         {/* Un ?nuevo= que no sirve (el mismo dueño, uno desactivado o que no existe) dice por qué se vuelve a elegir */}
         {nuevoId !== null && <p role="status">{nuevoId === clienteId ? "Ya es su dueño: elige a otro cliente." : "Ese cliente ya no está activo: elige a otro."}</p>}
-        <ElegirCliente titulo="Nuevo dueño" q={typeof parametros.q === "string" ? parametros.q : ""} excepto={clienteId} hrefCliente={(otro) => conDesde(`${base}?nuevo=${otro}`, origen) as Route} />
+        <ElegirCliente titulo="Nuevo dueño" q={typeof parametros.q === "string" ? parametros.q : ""} excepto={clienteId} hrefCliente={(otro) => conDesde(`${base}?nuevo=${otro}`, origen) as Route} siguiente="Siguiente" />
       </>
     );
   }
