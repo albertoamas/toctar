@@ -1,5 +1,5 @@
 import "server-only";
-import { and, eq, max, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { db, type Transaccion } from "@/db";
 import { marcaVehiculo, tamanoVehiculo } from "@/db/esquema";
 import type { EstadoFormulario } from "@/lib/formularios";
@@ -21,12 +21,22 @@ export type Existentes = NonNullable<EstadoCliente["existentes"]>;
  * sigue activo. Al editar, `actual` es el vehículo: no choca consigo mismo y puede conservar un tamaño ya desactivado.
  */
 export async function revisarVehiculo(
-  datos: { placa: string; tamanoId: number },
+  datos: { placa: string; tamanoId: number; marca?: string | null },
   prefijo: string,
   errores: Record<string, string>,
   existentes: Existentes,
-  actual?: { id: number; tamanoId: number },
+  actual?: { id: number; tamanoId: number; marca?: string | null },
 ) {
+  // La marca, solo de la lista activa (26/11): las marcas nuevas las suma el dueño en Configuración → Taller. La que ya
+  // tenía el vehículo (vieja o desactivada) se puede conservar
+  const marca = datos.marca?.trim();
+  if (marca && marca.toLocaleLowerCase("es") !== actual?.marca?.trim().toLocaleLowerCase("es")) {
+    const [enLista] = await db
+      .select({ id: marcaVehiculo.id })
+      .from(marcaVehiculo)
+      .where(and(sql`lower(${marcaVehiculo.nombre}) = lower(${marca})`, eq(marcaVehiculo.activo, true)));
+    if (!enLista) errores[`${prefijo}marca`] = "Elige una marca de la lista.";
+  }
   const conPlaca = await clienteConPlaca(datos.placa, actual?.id);
   if (conPlaca) {
     errores[`${prefijo}placa`] = `La placa ${datos.placa} ya está registrada a nombre de ${conPlaca.nombre}.`;
@@ -41,18 +51,14 @@ export async function revisarVehiculo(
 }
 
 /**
- * La marca de un vehículo como está en la lista (pedido 52): "toyota" se guarda "Toyota". Una que no está se suma a la
- * lista, al final (la escribió quien registra el vehículo: "Agregar «X»"); si se cruza con otra igual a la vez, la frena
- * el índice único y se usa la que quedó. Dentro de la transacción que guarda el vehículo.
+ * La marca de un vehículo como está en la lista (pedido 52): "toyota" se guarda "Toyota". Ya no suma marcas (26/11: solo
+ * desde Configuración → Taller, y `revisarVehiculo` rechaza una que no está); una vieja que el vehículo ya tenía queda
+ * como estaba. Dentro de la transacción que guarda el vehículo.
  */
 export async function conMarcaDeLaLista<T extends { marca: string | null }>(tx: Transaccion, datos: T): Promise<T> {
   const marca = datos.marca?.trim();
   if (!marca) return datos;
   const buscar = () => tx.select({ nombre: marcaVehiculo.nombre }).from(marcaVehiculo).where(sql`lower(${marcaVehiculo.nombre}) = lower(${marca})`);
   const [existente] = await buscar();
-  if (existente) return { ...datos, marca: existente.nombre };
-  const [{ ultimo }] = await tx.select({ ultimo: max(marcaVehiculo.orden) }).from(marcaVehiculo);
-  await tx.insert(marcaVehiculo).values({ nombre: marca, orden: (ultimo ?? 0) + 1 }).onConflictDoNothing();
-  const [guardada] = await buscar();
-  return { ...datos, marca: guardada?.nombre ?? marca };
+  return existente ? { ...datos, marca: existente.nombre } : datos;
 }

@@ -6,7 +6,6 @@ import { useEffect, useRef, useState } from "react";
 import { Campo } from "@/componentes/panel/campo";
 import { MasDatos } from "@/componentes/panel/mas-datos";
 import { useCerrarModal } from "@/componentes/panel/modal-contexto";
-import { CampoConBusqueda } from "@/componentes/panel/campo-con-busqueda";
 import { Selector } from "@/componentes/panel/selector";
 import { Input } from "@/componentes/ui/input";
 import { Textarea } from "@/componentes/ui/textarea";
@@ -15,7 +14,6 @@ import type { EstadoCliente } from "../acciones";
 import {
   aniosParaElegir,
   type CatalogoVehiculos,
-  filtrarMarcas,
   marcaExacta,
   marcasParaElegir,
 } from "../catalogo-vehiculos";
@@ -166,31 +164,50 @@ export function CamposVehiculo(props: PropsCampos & { tamanos: Tamano[]; /** Las
   useEffect(() => {
     if (menuTamano.current && menuTamano.current.value !== tamanoId) menuTamano.current.value = tamanoId;
   }, [estado, tamanoId]);
-  // Pedido 52: la marca de la lista (con búsqueda) y el año en un selector. El modelo y el color, texto simple (el color
+  // La marca y el año: React también los vuelve a "Elige …" al terminar un envío con error (26/11: se perdían si se
+  // eligieron antes de que faltara la placa). Como el tamaño, después de cada envío se vuelve a poner lo enviado
+  const marcaInicial = marcaExacta(catalogo.marcas, v[n("marca")] ?? "") ?? v[n("marca")]?.trim() ?? "";
+  const anioInicial = v[n("anio")] ?? "";
+  const menuMarca = useRef<HTMLSelectElement>(null);
+  const menuAnio = useRef<HTMLSelectElement>(null);
+  useEffect(() => {
+    if (menuMarca.current) menuMarca.current.value = marcaInicial;
+    if (menuAnio.current) menuAnio.current.value = anioInicial;
+    // Solo cuando llega lo enviado (un envío): no pisa lo que se elige mientras tanto. No con `estado`, que Nueva
+    // cotización y Nueva reserva arman de nuevo en cada dibujo
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [estado.valores]);
+  // Pedido 52: la marca de la lista y el año en un selector. El modelo y el color, texto simple (el color
   // con botones de los frecuentes se quitó el 20/11, a pedido del dueño)
 
   // Marca, modelo, año y color: a la vista, o plegados detrás de "Agregar …" en el alta. Una columna, como el resto
   const opcionales = !compacto && (
     <>
+      {/* Un menú, como el tamaño y el año (26/11, a pedido del desarrollador): solo las marcas de Configuración → Taller.
+          Antes se escribía y "Agregar «X»" sumaba marcas mal escritas a la lista; ahora las suma solo el dueño, desde ahí */}
       <Campo id={n("marca")} etiqueta="Marca" opcional error={e[n("marca")]}>
-        <CampoConBusqueda
+        <Selector
+          ref={menuMarca}
           id={n("marca")}
-          nombre={n("marca")}
-          opciones={marcasParaElegir(catalogo.marcas, v[n("marca")])}
-          filtrar={filtrarMarcas}
-          exacta={marcaExacta}
-          valorInicial={v[n("marca")] ?? ""}
-          agregar
-          placeholder="Elige la marca"
-          invalido={!!e[n("marca")]}
+          name={n("marca")}
+          defaultValue={marcaInicial}
+          aria-invalid={!!e[n("marca")]}
           aria-describedby={describir("marca")}
-        />
+          className="sm:max-w-sm"
+        >
+          <option value="">Elige la marca</option>
+          {marcasParaElegir(catalogo.marcas, v[n("marca")]).map((m) => (
+            <option key={m} value={m}>
+              {m}
+            </option>
+          ))}
+        </Selector>
       </Campo>
       <Campo id={n("modelo")} etiqueta="Modelo" opcional error={e[n("modelo")]}>
         <Input id={n("modelo")} name={n("modelo")} autoComplete="off" defaultValue={v[n("modelo")]} aria-invalid={!!e[n("modelo")]} aria-describedby={describir("modelo")} />
       </Campo>
       <Campo id={n("anio")} etiqueta="Año" opcional error={e[n("anio")]}>
-        <Selector id={n("anio")} name={n("anio")} defaultValue={v[n("anio")] ?? ""} aria-invalid={!!e[n("anio")]} aria-describedby={describir("anio")} className={ANCHO_DATO.placa}>
+        <Selector ref={menuAnio} id={n("anio")} name={n("anio")} defaultValue={anioInicial} aria-invalid={!!e[n("anio")]} aria-describedby={describir("anio")} className={ANCHO_DATO.placa}>
           <option value="">Elige el año</option>
           {aniosParaElegir().map((a) => (
             <option key={a} value={a}>
