@@ -1,5 +1,6 @@
 "use client";
 
+import type { ResumenVehiculo } from "../resumen-vehiculos";
 import { useActionState, useRef, useState } from "react";
 import type { Route } from "next";
 import { PlusIcon } from "lucide-react";
@@ -34,9 +35,11 @@ type Props = {
   catalogo: CatalogoVehiculos;
   /** La ficha del cliente: "Volver" desde la del vehículo lleva ahí (pedido 43). */
   desde: string;
+  /** Lo de cada vehículo (26/11): su último trabajo, su próximo mantenimiento y lo que pide atención. */
+  resumen?: Record<number, ResumenVehiculo>;
 };
 
-export function VehiculosCliente({ clienteId, vehiculos, tamanos, catalogo, desde }: Props) {
+export function VehiculosCliente({ clienteId, vehiculos, tamanos, catalogo, desde, resumen }: Props) {
   const hidratado = useHidratado();
   const [agregando, setAgregando] = useState(false);
   // Cada apertura empieza con el formulario limpio, sin los errores de la vez anterior
@@ -52,6 +55,9 @@ export function VehiculosCliente({ clienteId, vehiculos, tamanos, catalogo, desd
       detalles: [...(detalle.length > 0 ? [detalle.join(" ")] : []), `Tamaño: ${v.tamano}`],
       // Su foto (pedido 58), como las miniaturas de los servicios del sitio; sin foto, el recuadro con su ícono
       miniatura: v.foto?.miniatura ?? null,
+      lineas: resumen?.[v.id]?.lineas,
+      aviso: resumen?.[v.id]?.aviso?.texto,
+      tipoAviso: resumen?.[v.id]?.aviso?.tipo,
     };
   };
 

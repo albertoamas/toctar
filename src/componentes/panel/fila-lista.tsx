@@ -22,6 +22,8 @@ export type DatosFila = {
   dato?: string | null;
   /** Datos secundarios, en una línea que se parte si no cabe: ["5 variantes", "1 día"]. */
   detalles?: string[];
+  /** Más datos, cada uno en su renglón, en tinta suave: el último trabajo y el próximo mantenimiento de un vehículo. */
+  lineas?: string[];
   /** Lo que pide atención ("Faltan 3 precios", "Debía ingresar el 21/10"): una alerta junto al título (23/11, con ícono). */
   aviso?: string | null;
   /** De qué es el aviso, para su ícono (por defecto, algo que falta cargar). */
@@ -73,7 +75,7 @@ export function FilaConAcciones({ children }: { children: React.ReactNode }) {
   return <li className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center lg:gap-6">{children}</li>;
 }
 
-function FilaLista({ href, titulo, tituloGrande, dato, detalles = [], aviso, tipoAviso, avisoGrave, estado, tonoEstado, atenuada, miniatura, accion }: DatosFila) {
+function FilaLista({ href, titulo, tituloGrande, dato, detalles = [], lineas = [], aviso, tipoAviso, avisoGrave, estado, tonoEstado, atenuada, miniatura, accion }: DatosFila) {
   return (
     <Link href={href} className={cn("flex min-h-11 items-center gap-3 px-4 py-3 hover:bg-superficie/60 focus-visible:-outline-offset-2", atenuada && "text-tinta-suave")}>
       {miniatura !== undefined && (
@@ -104,6 +106,11 @@ function FilaLista({ href, titulo, tituloGrande, dato, detalles = [], aviso, tip
             ))}
           </span>
         )}
+        {lineas.map((l, i) => (
+          <span key={i} className="text-sm text-tinta-suave">
+            {l}
+          </span>
+        ))}
         {accion && (
           <span className="mt-1 flex items-center gap-0.5 text-sm font-semibold @lg:hidden">
             {accion}
