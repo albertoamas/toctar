@@ -53,14 +53,14 @@ jobs:
       S3_BUCKET_PRIVADO: toctar-privado
       S3_URL_PUBLICA: http://localhost:9000/toctar
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - run: npm ci
       # El caché de compilación de Next: un build con cambios chicos tarda mucho menos que uno de cero
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: .next/cache
           key: next-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ hashFiles('src/**', 'public/**', 'next.config.ts') }}
@@ -121,14 +121,14 @@ jobs:
       S3_BUCKET_PRIVADO: toctar-privado
       S3_URL_PUBLICA: http://localhost:9000/toctar
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - run: npm ci
       # El caché de compilación de Next: un build con cambios chicos tarda mucho menos que uno de cero
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: .next/cache
           key: next-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ hashFiles('src/**', 'public/**', 'next.config.ts') }}
@@ -140,7 +140,7 @@ jobs:
         run: |
           echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
           echo "imagen=$ImageOS" >> "$GITHUB_OUTPUT"
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         id: cache-navegador
         with:
           path: ~/.cache/ms-playwright
@@ -182,7 +182,7 @@ jobs:
       # C6, fase 5: las capturas del recorrido del panel (390 y 1366 px, con 3 roles), siempre, para revisarlas a ojo
       - name: Capturas del recorrido del panel
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: recorrido-panel
           path: test-results/**/recorrido-*.jpg
@@ -192,7 +192,7 @@ jobs:
       # (trace.zip) es lo único que cuenta qué pasó. Sin fallos, no hay nada que subir
       - name: Rastros de las pruebas que fallaron
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: e2e-rastros
           path: test-results/**/trace.zip
@@ -204,7 +204,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           # Todo el historial: un secreto que entró en un commit viejo también cuenta
           fetch-depth: 0
