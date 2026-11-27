@@ -1,0 +1,200 @@
+# Sistema del panel: reglas de estructura
+
+- **Fecha:** 8 de noviembre de 2026 (al día el 13/11: los anchos de las listas y las portadas, y cómo se ve cada forma)
+- **Alcance:** todas las pantallas de `/panel/**`. El sitio público y el ingreso siguen `identidad-visual.md`.
+- **Base:** pedido 26 (`08-desarrollo/etapas/P26-rediseno-panel.md`), que define el estilo: colores, tipografía, tarjetas e insignias.
+- **Cómo se llegó aquí:** con `08-desarrollo/etapas/C6-consistencia-del-panel.md`, terminado el 08/11/2026. Todas las pantallas cumplen estas reglas; lo que se aparta tiene su motivo escrito en `tests/unit/consistencia-panel.test.ts`, y `tests/e2e/recorrido-panel.spec.ts` recorre el panel en 4 tamaños con 3 roles.
+
+Este documento dice **qué forma tiene cada pantalla**. Si una regla no alcanza, se cambia aquí primero y después en el código: una pantalla no inventa su propia forma.
+
+## 1. Tipos de pantalla
+
+Toda pantalla del panel es de uno de estos tipos. Todas tienen **el mismo ancho** (17/11, pedido del dueño): todo el
+espacio, sin tope, también en un monitor grande. El tipo decide la forma y la separación entre partes.
+
+| Tipo | Para qué | Ejemplos |
+|---|---|---|
+| `lista` | Una tabla con columnas, o un tablero | Clientes, Taller, Cotizaciones, Agenda |
+| `ficha` | Ver y editar una cosa, o una lista de filas sin columnas | Cliente, Orden, Negocio, Preguntas frecuentes |
+| `formulario` | Crear algo, o un paso que se hace de arriba abajo | Nueva reserva, Recibir, Entregar, Nuevo cliente |
+| `portada` | Elegir a dónde ir o ver el día | Inicio, Sitio web, Configuración |
+
+- El ancho sale de `PaginaPanel`. Las páginas no escriben `max-w-*`.
+- Antes (10/11) eran cuatro anchos (1280, 1024 y 768 px): en un monitor grande el formulario usaba un tercio de la
+  pantalla, la ficha la mitad, y el título y el botón principal cambiaban de lugar de una pantalla a otra.
+- **Con todo el ancho, el contenido se acomoda adentro**: las fichas en partes de a 2 o 3 (`PartesIguales`); un
+  formulario con dos partes las pone lado a lado desde `@6xl` (Nuevo usuario: la cuenta y sus permisos). Nuevo
+  cliente no (26/11): sus tarjetas una debajo de la otra y «Así queda» al costado, como Nueva cotización. Los campos ocupan su lugar en la grilla, sin tope general
+  (se probó uno de 28rem el 17/11 y no convenció al dueño). El recuadro de la firma, hasta 640 px.
+- **Todo alineado a la izquierda, nunca centrado** (C7 §4, 18/11): junto al menú lateral, un bloque centrado deja dos
+  franjas vacías desparejas y el título cambia de lugar según la ventana. Lo único centrado es un modal.
+- **Los datos cortos tienen el ancho de lo que llevan**, desde un solo mapa, `ANCHO_DATO` (`src/componentes/panel/anchos.ts`):
+  monto 10 rem (`CampoMonto` ya lo trae), fecha 12 rem, año 7 rem, placa o NIT 12 rem, teléfono 14 rem y cantidad
+  (días, meses, porcentaje) 7 rem. No es un tope general: los demás campos siguen a todo el ancho de su columna. Una fecha
+  sin su ancho la detecta `consistencia-panel.test.ts`.
+- **El texto de corrido** (notas, descripciones) se corta en unos 70 caracteres por línea (`MEDIDA_TEXTO`; `ListaDatos`
+  ya lo trae en sus valores). Solo el párrafo: su tarjeta sigue a todo el ancho.
+- En el celular todo va en una columna. Hasta una laptop de 1280 px no cambia nada: la diferencia se ve en monitores grandes.
+
+**Cómo se ve cada forma** (revisión de las 40 pantallas del 10/11, `08-desarrollo/inventario-pantallas.md`):
+
+| Forma | Computadora | Celular |
+|---|---|---|
+| **Lista** | Tabla con columnas (`TablaLista`); la fila abre su ficha | Filas: lo que identifica arriba, el estado a la derecha, el resto abajo |
+| **Lista de acciones** (cobrar, avisar) | Tabla con una columna de acciones (`TablaAcciones`) | Tarjetas con los botones abajo |
+| **Ficha de un trabajo** (cotización, reserva, orden) | Pasos del trabajo, el paso siguiente grande, secciones y "Más" | Lo mismo, apilado |
+| **Ficha editable** | Secciones en tarjetas, de a dos (`PartesIguales`); "Editar" abre un modal | Una columna; el modal sube desde abajo |
+| **Cliente y vehículo** (26/11) | Cada dato en una sola ficha: el cliente es la persona y sus autos (cada vehículo con su último trabajo, su próximo mantenimiento y lo que pide atención) y sus datos; el vehículo, su historia, sus mantenimientos y su dueño, con «Editar vehículo» en «Más» | Lo mismo, apilado |
+| **Crear o un paso del taller** | Formulario a todo el ancho, con sus partes lado a lado si son dos; en pasos si hace falta, botón al pie (`PieFormulario`). En los formularios en pasos con montos (Nueva cotización, Nueva versión, Nueva reserva), lo elegido y el total al costado (`ConResumen`, C7 §5.2); en Nuevo cliente, «Así queda», que se llena mientras se escribe (26/11) | Igual, con el botón fijo abajo y el total al lado |
+| **Portada** | Tarjetas para elegir a dónde ir | Una debajo de la otra |
+
+Una pantalla nueva o cambiada toma una de estas formas; si ninguna sirve, se discute antes de inventar otra.
+
+## 2. Forma de una ficha
+
+> **Dónde va el título de una tarjeta: adentro, en todo el panel (decisión final del 19/11, tras probarlo en el celular).**
+>
+> - Cada sección es una tarjeta con su cabecera: el título adentro, su acción a la derecha ("Editar", "Agregar", "Nueva reserva") y una línea fina que la separa del contenido. Vale para fichas, listas, portadas, formularios, modales y pasos del taller: `Seccion`, `SeccionConEditar`, `SeccionFormulario` y `CabeceraTarjeta`. En el celular cada sección queda como un bloque cerrado y se distingue al deslizar.
+> - Una lista dentro de una sección (`Seccion sinRelleno`) pierde su propio marco: no hay tarjeta dentro de tarjeta.
+> - **Una tarjeta de datos con sus etiquetas no lleva título** si la pantalla ya dice qué es (lo que se recibe o se entrega).
+> - Se probó también el título fuera en las fichas (18/11) y se descartó: en el celular el título quedaba suelto entre dos tarjetas. No se vuelve a cambiar.
+> - **El encabezado de una ficha** dice debajo del título un dato útil (el WhatsApp del cliente; el vehículo y su dueño), no solo a dónde se vuelve (`EncabezadoPagina subtitulo`).
+
+| Disposición | Columnas | Cuándo |
+|---|---|---|
+| Principal y datos | Una ancha y una de `22rem` | Hay un trabajo principal y datos de apoyo: Orden, Reserva, Cotización, Reclamo |
+| Partes iguales | Dos iguales, o una si la parte es larga | Secciones cortas y parecidas: Cliente, Catálogo, Negocio, Parámetros |
+
+## 3. Acciones
+
+| Dónde | Qué va | Cómo se ve |
+|---|---|---|
+| Encabezado de la página | La acción principal | Roja, **una sola**, que cambia según el estado si hace falta |
+| Debajo del encabezado, en una ficha de trabajo (Reserva, Orden) | El paso siguiente que avanza el trabajo: recibir, empezar, marcar listo, avisar, entregar. Va aquí y no en el encabezado | Rojo y grande (56 px, a todo el ancho en el celular), con `PasoSiguiente`; lo que lo acompaña, al lado con borde. Se toca de pie en el taller. Si falla, el motivo queda debajo del botón |
+| Encabezado de la página | Otras acciones ("Escribir por WhatsApp", "Cambiar orden") | Con borde |
+| Encabezado de la página | Lo poco usado | En "Más" (`MenuMas`) |
+| Cabecera de una sección | "Editar", "Agregar", "Registrar pago" | Sin borde, con ícono |
+| Fila de una lista | Toda la fila abre su ficha o su modal | Sin botones, con la flecha ›. Excepción: la acción de todos los días en Saldos y Mantenimientos (`FilaConAcciones`) |
+| Fila de una tarjeta que se lee (un pago) | Lo poco usado que no se deshace (anular) | En su "⋯" (`MenuMas icono`), a la derecha, con su confirmación en un modal |
+| Pie de un modal | "Cancelar" y la acción, a la derecha (en el celular, a lo ancho): `PieModal` pone "Cancelar" primero (C7 §5.4, 18/11) | La acción en rojo; lo que no se deshace, con contorno rojo; "Cancelar", con borde |
+
+- En una pantalla con varias listas iguales (Taller), "Agregar" va con borde: varias acciones rojas competirían.
+- Lo que no se deshace pide confirmación, con el foco en "Cancelar".
+
+## 3b. Crear: modal o pantalla, y cómo se nombra (15/11)
+
+Decidido al revisar los hallazgos de la prueba en celulares: el mismo acto se decía "Agregar", "Nuevo", "Crear" y "Guardar" según la pantalla. Es el criterio de Material, Apple y Shopify Polaris: la consistencia es que el criterio sea siempre el mismo, no que todo sea igual.
+
+| Cuándo | Formato | Ejemplos |
+|---|---|---|
+| Hasta unos 4 campos cortos, sin pasos ni fotos | Modal (`ModalFormulario`) | Nuevo servicio (nombre y duración), Agregar pregunta, Agregar variante, Agregar vehículo, Registrar pago |
+| Con secciones, pasos, permisos, fotos o firma | Pantalla propia (`PaginaPanel tipo="formulario"`) | Nuevo cliente (con su vehículo), Nuevo usuario (con sus permisos), Nueva cotización, Nueva reserva |
+
+| Qué se crea | Botón | Título | Botón final |
+|---|---|---|---|
+| Un registro principal, desde su lista | **Nuevo** … | **Nuevo** … | **Crear** … (la reserva: **Reservar**) |
+| Algo dentro de otra cosa, desde una ficha o sección | **Agregar** … | **Agregar** … | **Agregar** … (un pago: **Registrar pago**) |
+
+En los dos casos, al crear se llega a la ficha de lo creado (o se ve en la sección), con un aviso corto.
+
+## 4. Editar y guardar
+
+- Todo modal de edición usa `ModalFormulario`, con sus botones en `PieModal`. Arriba, el dato que decide con `DatoClave`; su tamaño, `chico` (30 rem, casi todos) o `mediano` (40 rem: una tabla o fotos), y en el celular, la hoja de borde a borde (C7 §5.4).
+- El botón dice qué guarda: "Guardar horario", "Guardar pregunta".
+- **Ningún modal pierde lo escrito por un cierre sin querer** (pulido 13.48): con cambios, tocar afuera, Escape o el "atrás" de Android (Chrome se lo avisa al diálogo) no cierran; el **pie del mismo modal** pasa a "Tienes cambios sin guardar." con "Seguir editando" (con el foco) y "Descartar cambios". **Nunca otro modal encima.** "Cancelar" y la X también preguntan, como en iOS y Android (hallazgo 7 de la prueba en celulares, 15/11): cerrar con cambios nunca los descarta sin avisar. "Listo" no pregunta (cada cambio ya se guardó). Sin cambios, todo cierra directo. Al salir de una pantalla con cambios (un formulario de crear, Recibir, Entregar), la pregunta es un diálogo chico y centrado (`alertdialog`) con "Seguir editando" y "Salir sin guardar".
+- Al guardar, el modal se cierra y la ficha muestra el dato nuevo.
+- Las fotos se guardan al momento y van en la fila compacta de su sección.
+
+## 5. Listas
+
+| Caso | Componente |
+|---|---|
+| Tabla con columnas | `TablaLista` |
+| Filas que abren otra pantalla | `ListaFilas` |
+| Filas que abren un modal, y se agregan y ordenan | `ListaEditable` |
+| Filas con su acción de todos los días | `ListaEnTarjeta` y `FilaConAcciones` |
+| Cambiar el orden | `OrdenarLista`, en un modal |
+| Lista vacía | `EstadoVacio` |
+| Lista que crece con el uso | `Paginacion`, de a 25 (`src/lib/paginacion.ts`) |
+
+**Listas largas (17/11):** una lista que crece con el uso del taller (clientes, cotizaciones, reclamos, lo cerrado) va de a
+páginas, nunca cortada con "busca para ver más". La base trae solo la página pedida y cuenta el total
+(`listarClientes` es el ejemplo: `leerPagina`, `ajustarPagina` y `POR_PAGINA`). La página va en la dirección
+(`?pagina=2`): Atrás vuelve a la misma y se combina con los filtros; el buscador y las píldoras la borran al cambiar.
+Una página después de la última muestra la última. Las listas cortas por naturaleza (saldos pendientes, usuarios,
+catálogo, la semana de la agenda) no llevan páginas.
+
+## 5b. Navegar: respuesta al instante (17/11)
+
+El servidor está lejos (Alemania): cada pantalla, filtro o pestaña tarda al menos medio segundo en llegar. Para que el
+toque no parezca perdido, `NavegacionPendiente` (en el diseño del panel) hace dos cosas en el mismo instante del toque en
+cualquier enlace del panel:
+
+- **Una barra de progreso fina arriba** (azul de "información"), desde los 120 ms y hasta que llega la pantalla.
+- **Lo tocado se marca enseguida**: el filtro (`Filtros`), la pestaña (`Pestanas`) y el módulo del menú leen
+  `useDestinoPendiente()` y se ven elegidos antes de la respuesta. Un enlace nuevo que elige entre opciones hace lo mismo.
+
+No hace falta nada en cada pantalla: cualquier `Link` del panel ya lo tiene. Lo prueba `tests/e2e/respuesta-instantanea.spec.ts`
+con el servidor demorado a propósito.
+
+## 6. Datos en lectura
+
+La etiqueta a la izquierda y el valor a la derecha, con `ListaDatos`, para que los valores queden en columna. Un dato vacío dice "Sin cargar" o no se muestra.
+
+## 7. Componentes
+
+| Componente | Para qué | Estado |
+|---|---|---|
+| `PaginaPanel` | El tipo de pantalla, su ancho y su separación | Existe desde C6 |
+| `PartesIguales` | Las partes de a dos (o de a tres) de una ficha | Existe desde C6 |
+| `Seccion` | Título arriba de la tarjeta, con su acción; con `dentro`, adentro (en un formulario) | Existe desde C6, sobre `CabeceraSeccion` |
+| `CabeceraTarjeta` | El título adentro de una tarjeta de formulario, con su acción y su línea de ayuda | Existe desde C7 (18/11) |
+| `LineaDeTiempo` | La historia de un cliente o un vehículo: reservas, órdenes y cotizaciones en una lista, lo más reciente arriba, plegada desde la sexta | Existe desde C7 (18/11) |
+| `AvisoEstado` | Lo que decide un paso del taller, arriba: verde, ámbar o azul, con ícono, texto y su acción | Existe desde C7 (18/11) |
+| `ConResumen`, `PasoConCostado` | El paso (2/3) y su resumen al costado (1/3) en la computadora: el resumen se oculta en el celular (`ConResumen`) o va arriba (`PasoConCostado`) | Existen desde C7 (18/11) |
+| `CabeceraSeccion` | Solo el título y su acción, si lo de abajo no es una tarjeta (una lista, un texto) | Existe |
+| `SeccionConEditar` | Sección que se lee, con su modal | Existe |
+| `EncabezadoPagina` | Volver, título, estado y acciones | Existe |
+| `ModalFormulario`, `PieModal`, `CancelarModal` | Modales | Existen; la pregunta al cerrar se agrega en C6 |
+| `ListaDatos`, `ListaFilas`, `TablaLista`, `ListaEditable`, `OrdenarLista` | Datos y listas | Existen |
+| `ListaEnTarjeta`, `FilaConAcciones` | Filas con su acción de todos los días | Existen desde C6 |
+| `MenuMas`, `Insignia`, `EstadoVacio` | Acciones poco usadas, estados y vacíos | Existen |
+| `Alerta` | Lo que pide hacer algo: la insignia ámbar (o roja) con su ícono | Existe desde el 23/11 |
+
+## 7a. Pasos: elegir y confirmar (24/11)
+
+En todo flujo de pasos (Nueva cotización, Nueva reserva, cambio de dueño), elegir algo que ya existe es **marcar y
+confirmar**: tocar una tarjeta la marca con su tilde y no avanza sola; **«Siguiente»** confirma, siempre en el pie fijo,
+con «Atrás» al lado y fuera de la tarjeta, pegado abajo de la pantalla mientras se baja (también en la computadora), y en
+gris hasta que se elige una. Las mismas tarjetas en todos (`ListaConNuevo`; en una página sola, `TarjetasParaElegir`),
+con un renglón que ayuda a elegir (el cliente, su WhatsApp; la placa solo si la búsqueda la encontró), y «Cliente nuevo»
+u «Otro vehículo» punteado **arriba**, debajo del buscador. Al marcarlo, **sus campos se abren ahí mismo, dentro de su
+tarjeta** (sin ir a otra pantalla ni un botón para volver a buscar); lo escrito queda si se marca otra y se vuelve. Sin
+buscar, los 8 clientes más recientes. Con una sola opción, ya viene marcada.
+
+## 7b. Estados y alertas: un color, un significado (23/11)
+
+Todo estado va en una **insignia** (`Insignia`, la píldora con fondo) y todo lo que pide hacer algo, en una **alerta**
+(`Alerta`: la misma píldora con un ícono en lugar del punto, para no depender del color). Cada cosa lleva **un solo
+estado y, como mucho, una alerta**; donde la pestaña ya dice el estado (Pendientes, Aceptadas), va solo la alerta. Los
+colores, como las insignias de Atlassian y Shopify Polaris (el detalle, en `src/lib/tonos.ts`):
+
+| Color | Significa | Ejemplos |
+|---|---|---|
+| Gris | Esperando a otro, o ya no cuenta | Cotización pendiente (espera al cliente), reemplazada, desactivado |
+| Azul | En curso o programado | Reservada, en proceso |
+| Violeta | Recién llegado al taller | Recibida |
+| Verde | Bien o terminado | Aceptada, lista, entregada, pagado, atendido |
+| Ámbar (alerta) | Falta hacer algo de nuestro lado | Sin fecha, sin respuesta hace 9 días, sin avisar, debe 300 Bs, faltan precios, reclamo pendiente |
+| Rojo | Perdido o problema | Rechazada, cancelada, atrasada, venció |
+
+La barra de pasos (`BarraPasos`) es solo para lo que siempre avanza igual: las órdenes en el taller y las fichas de
+reserva y orden.
+
+## 8. Cómo se hace cumplir
+
+Una prueba en el CI (`tests/unit/consistencia-panel.test.ts`, de C6) revisa el código de `src/app/panel` y de los módulos. Sus listas de excepciones cuentan las apariciones por archivo y solo pueden achicarse: lo nuevo no puede entrar en ellas.
+
+## 9. Lo que no cambia
+
+Colores, tipografía, tamaños de botón (36 px con mouse, 44 con el dedo), accesibilidad y textos siguen en los estándares de `08-desarrollo/pulido-visual.md` y en `P26-rediseno-panel.md`.

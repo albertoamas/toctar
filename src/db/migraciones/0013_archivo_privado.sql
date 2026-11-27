@@ -1,0 +1,1 @@
+ALTER TABLE "archivo" ADD COLUMN "privado" boolean DEFAULT false NOT NULL;

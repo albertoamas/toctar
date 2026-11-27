@@ -1,0 +1,183 @@
+import { expect, test, type TestInfo } from "@playwright/test";
+import { crearServicioPublicado, ingresarComoDueno, mostrarServicio, PNG } from "./apoyo";
+
+// HU-11 Página de cada servicio y HU-15 (mensaje con el servicio). Criterios: docs/09-pruebas/criterios-entrega-1.md (11.x).
+
+const soloEscritorio = (info: TestInfo) => test.skip(info.project.name !== "escritorio", "Cambia servicios compartidos");
+
+test("la página de un servicio muestra el proceso y abre WhatsApp con ese servicio escrito", async ({ page }) => {
+  await page.goto("/servicios");
+  await page.getByRole("link", { name: "Ver el servicio: Mantenimiento del nano cerámico" }).click();
+  await expect(page).toHaveURL(/\/servicios\/mantenimiento-del-nano-ceramico$/);
+  await expect(page).toHaveTitle("Mantenimiento del nano cerámico · TocTar Detailing");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Mantenimiento del nano cerámico");
+
+  // Los 6 pasos que mandó el dueño, en orden
+  const proceso = page.getByRole("region", { name: "Cómo lo hacemos" });
+  await expect(proceso.getByRole("listitem")).toHaveCount(6);
+  await expect(proceso.getByRole("listitem").first()).toContainText("Lavado técnico de carrocería");
+  // Sin opciones: la variante "Única" no se muestra
+  await expect(page.getByRole("region", { name: "Opciones" })).toHaveCount(0);
+
+  const mensaje = "?text=Hola%2C%20quiero%20consultar%20por%20Mantenimiento%20del%20nano%20cer%C3%A1mico.";
+  await expect(page.getByRole("link", { name: "Consultar por este servicio por WhatsApp" })).toHaveAttribute("href", `https://wa.me/59171234567${mensaje}`);
+  // El cierre dice lo que gana el cliente y también manda el servicio escrito (pulido 2.3)
+  await expect(page.getByRole("link", { name: "Mandar fotos de mi vehículo por WhatsApp" })).toHaveAttribute("href", `https://wa.me/59171234567${mensaje}`);
+  // Por su enlace: al navegar dentro del sitio, Next.js guarda oculta la página anterior con su propio botón fijo.
+  await expect(page.locator(`.tt-whatsapp--fijo[href="https://wa.me/59171234567${mensaje}"]`)).toHaveCount(1);
+  await expect(page.locator("main")).not.toContainText(/\bBs\b/);
+});
+
+test("las variantes se muestran sin precio", async ({ page }) => {
+  await page.goto("/servicios/pulido-y-nano-ceramico");
+  const opciones = page.getByRole("region", { name: "Opciones" });
+  await expect(opciones.getByRole("listitem")).toHaveText([/1 año/, /2 años/, /3 años/, /5 años/, /10 años/]);
+  await expect(page.locator("main")).not.toContainText(/\bBs\b/);
+});
+
+// Pedido de la demo del 24/10: beneficios con ícono y, si las opciones van de menor a mayor, escalones
+test("los beneficios van primero, con ícono, y las opciones de menor a mayor se ven como escalones", async ({ page }, info) => {
+  soloEscritorio(info);
+  await ingresarComoDueno(page);
+  await page.goto("/panel/sitio/servicios");
+  await page.getByRole("link", { name: /Pulido y nano cerámico/ }).click();
+  await expect(page).toHaveURL(/\/panel\/sitio\/servicios\/\d+(?:[?&]volver=[^&#]*)?$/);
+  const panel = page.url();
+  // Empieza sin beneficios, aunque un intento anterior haya fallado a mitad de camino
+  await page.getByRole("button", { name: "Editar beneficios" }).click();
+  const beneficios = page.getByRole("dialog", { name: "Beneficios" });
+  await expect(beneficios.getByRole("button", { name: "Agregar beneficio" })).toBeVisible();
+  const quitar = beneficios.getByRole("button", { name: "Quitar beneficio 1" });
+  while (await quitar.isVisible()) await quitar.click();
+  await beneficios.getByRole("button", { name: "Agregar beneficio" }).click();
+  await beneficios.getByLabel("Beneficio 1", { exact: true }).fill("Protege del sol");
+  await beneficios.getByRole("button", { name: /^Beneficio 1, ícono/ }).click();
+  await page.getByRole("menuitemradio", { name: "Sol y rayos UV" }).click();
+  await expect(beneficios.getByRole("button", { name: "Beneficio 1, ícono: Sol y rayos UV" })).toBeVisible();
+  await beneficios.getByRole("button", { name: "Guardar beneficios" }).click();
+  await expect(beneficios).toHaveCount(0);
+  await page.getByRole("button", { name: "Editar cómo se ven las opciones" }).click();
+  const opcionesPanel = page.getByRole("dialog", { name: "Opciones" });
+  const escalera = opcionesPanel.getByRole("checkbox", { name: /Van de menor a mayor/ });
+  await escalera.check();
+  await opcionesPanel.getByRole("button", { name: "Guardar opciones" }).click();
+  await expect(opcionesPanel).toHaveCount(0);
+
+  await page.goto("/servicios/pulido-y-nano-ceramico");
+  // El beneficio con su ícono (decorativo: el texto dice lo mismo)
+  const beneficio = page.getByRole("region", { name: "Qué gana tu vehículo" }).getByRole("listitem");
+  await expect(beneficio).toHaveText("Protege del sol");
+  await expect(beneficio.locator("svg")).toHaveAttribute("aria-hidden", "true");
+  const opciones = page.getByRole("region", { name: "Opciones" });
+  await expect(opciones.locator(".tt-escalon")).toHaveCount(5);
+  // La capa crece: la última es más alta que la primera (en la computadora, columnas que suben)
+  const capas = opciones.locator(".tt-escalon__capa");
+  const [primera, ultima] = [await capas.first().boundingBox(), await capas.last().boundingBox()];
+  expect(ultima!.height).toBeGreaterThan(primera!.height);
+
+  // Sin la casilla, vuelven a ser recuadros; se quita el beneficio de prueba
+  await page.goto(panel);
+  await page.getByRole("button", { name: "Editar cómo se ven las opciones" }).click();
+  await escalera.uncheck();
+  await opcionesPanel.getByRole("button", { name: "Guardar opciones" }).click();
+  await expect(opcionesPanel).toHaveCount(0);
+  await page.getByRole("button", { name: "Editar beneficios" }).click();
+  await beneficios.getByRole("button", { name: "Quitar beneficio 1" }).click();
+  await beneficios.getByRole("button", { name: "Guardar beneficios" }).click();
+  await expect(beneficios).toHaveCount(0);
+  await page.goto("/servicios/pulido-y-nano-ceramico");
+  await expect(opciones.getByRole("listitem")).toHaveCount(5);
+  await expect(opciones.locator(".tt-escalon")).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "Qué gana tu vehículo" })).toHaveCount(0);
+});
+
+test("un servicio oculto o inexistente muestra la página no encontrada", async ({ page }, info) => {
+  await page.goto("/servicios/no-existe");
+  await expect(page.getByRole("heading", { name: "No encontramos esta página" })).toBeVisible();
+  // Responde 200 porque la página empieza a enviarse antes de saber si el servicio existe; Google no la indexa (pulido 2.9)
+  await expect(page.locator('meta[name="robots"][content*="noindex"]').first()).toBeAttached();
+
+  soloEscritorio(info);
+  await ingresarComoDueno(page);
+  await crearServicioPublicado(page, "Servicio oculto con página", "No se debe ver en el sitio.");
+  await page.goto("/servicios/servicio-oculto-con-pagina");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Servicio oculto con página");
+
+  await page.goBack();
+  await mostrarServicio(page, false);
+  await page.goto("/servicios/servicio-oculto-con-pagina");
+  await expect(page.getByRole("heading", { name: "No encontramos esta página" })).toBeVisible();
+});
+
+test("la lista de servicios termina con una invitación a mandar fotos, con un solo WhatsApp a la vista", async ({ page }) => {
+  await page.goto("/servicios");
+  await page.getByRole("heading", { name: "¿No sabes cuál elegir?" }).scrollIntoViewIfNeeded();
+  await expect(page.getByRole("link", { name: "Mandar fotos de mi vehículo por WhatsApp" })).toBeInViewport();
+  await expect(page.getByRole("link", { name: "Escribir a TocTar por WhatsApp" })).toBeHidden();
+});
+
+test("con el teclado se enmarca toda la tarjeta del servicio", async ({ page, isMobile }) => {
+  test.skip(isMobile, "El teclado se prueba en la computadora");
+  // Solo con el teclado y con la página ya hidratada: desde el último enlace del menú, Tab llega a la primera tarjeta
+  // (pasando por TikTok, junto al menú desde el pedido 35, si el enlace está cargado)
+  await page.goto("/servicios", { waitUntil: "networkidle" });
+  const enlace = page.locator(".tt-tarjeta__enlace").first();
+  await page.getByRole("navigation", { name: "Principal" }).getByRole("link", { name: "Contacto" }).focus();
+  await expect(async () => {
+    await page.keyboard.press("Tab");
+    await expect(enlace).toBeFocused({ timeout: 200 });
+  }).toPass({ intervals: [0], timeout: 3000 });
+  await expect(page.locator(".tt-tarjeta").first()).toHaveCSS("outline-style", "solid");
+});
+
+// Pulido de Servicios (21/11): sin "‹ Servicios" arriba (en el celular ocupaba una fila arriba de la foto): el menú marca
+// "Servicios" y la foto es lo primero
+test("en la página de un servicio no hay un enlace de volver: el menú marca Servicios y la foto va primero", async ({ page, isMobile }) => {
+  await page.goto("/servicios/pulido-y-nano-ceramico");
+  await expect(page.getByRole("main").getByRole("link", { name: "Servicios", exact: true })).toHaveCount(0);
+  if (!isMobile) await expect(page.getByRole("navigation", { name: "Principal" }).getByRole("link", { name: "Servicios" })).toHaveAttribute("aria-current", "page");
+  const foto = (await page.locator('main header [class*="aspect-[4/3]"]').boundingBox())!;
+  const titulo = (await page.getByRole("heading", { level: 1 }).boundingBox())!;
+  if (isMobile) expect(foto.y).toBeLessThan(titulo.y);
+});
+
+// Pedido de la demo del 24/10: una foto al lado de "Cómo lo hacemos" y de "Opciones", subida en su lugar del panel.
+// Decorativa: sin descripción y sin abrirse en grande (revisión de YankoSoft)
+test("cada sección de la página lleva su foto al lado, subida en su lugar del panel", async ({ page }, info) => {
+  test.setTimeout(60_000);
+  await ingresarComoDueno(page);
+  const { id, slug } = await crearServicioPublicado(page, `Servicio con fotos ${info.project.name}`);
+  await page.getByRole("button", { name: "Editar pasos" }).click();
+  const pasos = page.getByRole("dialog", { name: "Cómo lo hacemos" });
+  await pasos.getByRole("button", { name: "Agregar paso" }).click();
+  await pasos.getByLabel("Paso 1, título", { exact: true }).fill("Lavado técnico");
+  await pasos.getByRole("button", { name: "Guardar pasos" }).click();
+  await expect(pasos).toHaveCount(0);
+
+  // La foto va dentro de su sección, como en el sitio (pulido 13.19). Sin opciones en el catálogo, "Opciones" no sale
+  // en el sitio: ni su foto ni su casilla se ofrecen (pulido 13.2)
+  const fotos = page.getByRole("region", { name: "Cómo lo hacemos" });
+  await expect(fotos).toContainText("Lavado técnico");
+  await expect(fotos.getByRole("button", { name: "Subir foto: Cómo lo hacemos" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Subir foto: Opciones" })).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "Opciones" })).toHaveCount(0);
+  // Se sube al elegirla, sin descripción
+  await page.getByLabel("Archivo de la foto: Cómo lo hacemos").setInputFiles({ name: "foto.png", mimeType: "image/png", buffer: PNG });
+  await expect(fotos.getByRole("img", { name: 'Foto de "Cómo lo hacemos"' })).toBeVisible();
+  await expect(fotos.getByRole("button", { name: "Cambiar foto: Cómo lo hacemos" })).toBeVisible();
+
+  // En el sitio, al lado de su sección: decorativa y sin abrirse en grande
+  await page.goto(`/servicios/${slug}`);
+  const proceso = page.getByRole("region", { name: "Cómo lo hacemos" });
+  await expect(proceso.locator("img")).toHaveAttribute("src", /servicios\/[\w-]+-640\.webp$/);
+  await expect(proceso.locator("img")).toHaveAttribute("alt", "");
+  await expect(proceso.getByRole("button")).toHaveCount(0);
+
+  // Quitada, la sección queda solo con su texto
+  await page.goto(`/panel/sitio/servicios/${id}`);
+  await fotos.getByRole("button", { name: "Quitar foto: Cómo lo hacemos" }).click();
+  await expect(fotos.getByRole("button", { name: "Subir foto: Cómo lo hacemos" })).toBeVisible();
+  await page.goto(`/servicios/${slug}`);
+  await expect(proceso).toContainText("Lavado técnico");
+  await expect(proceso.locator("img")).toHaveCount(0);
+});

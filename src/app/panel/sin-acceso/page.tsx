@@ -1,0 +1,36 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { Suspense } from "react";
+import { cn } from "cn";
+import { PaginaPanel } from "@/componentes/panel/pagina-panel";
+import { buttonVariants } from "@/componentes/ui/button";
+import { exigirSesion } from "@/lib/sesion";
+
+export const metadata: Metadata = { title: "Sin acceso" };
+
+// A donde lleva exigirModulo cuando el usuario no tiene el módulo (RNF-05).
+// forbidden() de Next.js sigue experimental en la versión 16, por eso es una página propia.
+export default function SinAcceso() {
+  return (
+    <PaginaPanel tipo="formulario">
+      <h1 className="tt-titulo-pagina">Sin acceso</h1>
+      <Suspense fallback={null}>
+        <Explicacion />
+      </Suspense>
+      {/* Enlace con forma de botón: lleva a otra pantalla, así que se anuncia como enlace (un Button con render de Link se anunciaba como botón) */}
+      <div>
+        <Link href="/panel" className={cn(buttonVariants())}>Volver al inicio</Link>
+      </div>
+    </PaginaPanel>
+  );
+}
+
+async function Explicacion() {
+  // Solo para usuarios con sesión: sin sesión, al ingreso.
+  await exigirSesion();
+  return (
+    <p className="text-tinta-suave">
+      Tu usuario no tiene habilitado este módulo. Si lo necesitas, pídeselo al dueño.
+    </p>
+  );
+}

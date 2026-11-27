@@ -1,0 +1,14 @@
+# gitleaks (CI, paso "Secretos"): todas sus reglas de siempre, más una lista corta de falsos positivos.
+# Solo valores de prueba escritos a propósito, cada uno con dónde está. Nunca un patrón amplio ni una carpeta entera:
+# un secreto real en cualquier otro lado sigue frenando el PR.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Valores de prueba que no son secretos"
+regexes = [
+  # tests/unit/ip-visitante.test.ts: el secreto de origen de Cloudflare de las pruebas unitarias (14/11/2026)
+  '''secreto-de-prueba-0123456789''',
+  # playwright.config.ts y tests/e2e/seguridad.spec.ts: el de las pruebas de punta a punta
+  '''secreto-e2e-de-cloudflare''',
+]

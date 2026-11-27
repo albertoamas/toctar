@@ -1,0 +1,84 @@
+import type { Metadata, Route } from "next";
+import Link from "next/link";
+import { notFound, redirect } from "next/navigation";
+import { Suspense } from "react";
+import { Cargando } from "@/componentes/panel/cargando";
+import { ParaQuien } from "@/componentes/panel/para-quien";
+import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
+import { EstadoVacio } from "@/componentes/panel/estado-vacio";
+import { PaginaPanel } from "@/componentes/panel/pagina-panel";
+import { fechaEnBolivia } from "@/lib/fechas";
+import { exigirAccion } from "@/lib/sesion";
+import { FormularioNuevaVersion } from "@/modulos/cotizaciones/componentes/formulario-cotizacion";
+import { datosNuevaVersion } from "@/modulos/cotizaciones/consultas/versiones";
+import { NOMBRE_ESTADO } from "@/modulos/cotizaciones/reglas";
+import { conDesde, leerDesde } from "@/lib/volver";
+
+export const metadata: Metadata = { title: "Nueva versión" };
+
+// Versión nueva de una cotización pendiente (RN-02): `?desde=<id>` es la vigente, que se reemplaza; arranca con sus
+// servicios, precios y condiciones. Un `desde` que ya no es la vigente lleva a la vigente. El dueño o el encargado con
+// "Cotizaciones" (pedido 24).
+export default function PaginaNuevaVersion({ params, searchParams }: PageProps<"/panel/cotizaciones/[id]/nueva-version">) {
+  return (
+    <PaginaPanel tipo="formulario">
+      <Suspense fallback={<Cargando />}>
+        <Contenido params={params} searchParams={searchParams} />
+      </Suspense>
+    </PaginaPanel>
+  );
+}
+
+async function Contenido({ params, searchParams }: Pick<PageProps<"/panel/cotizaciones/[id]/nueva-version">, "params" | "searchParams">) {
+  await exigirAccion("cotizar");
+  const [{ id }, parametros] = await Promise.all([params, searchParams]);
+  const { desde } = parametros;
+  const consultaId = Number(id);
+  if (!Number.isInteger(consultaId) || consultaId <= 0) notFound();
+  const desdeId = typeof desde === "string" && /^\d+$/.test(desde) ? Number(desde) : null;
+  const datos = await datosNuevaVersion(consultaId, desdeId);
+  // Una consulta de antes sin cotizar no tiene versiones: no es una cotización
+  if (!datos || datos.estado === "consulto") notFound();
+  // Sin `desde` (o con uno de otra cotización), a la vigente
+  if (!datos.desde && !datos.desdeReemplazado && datos.vigenteId) redirect(conDesde(`/panel/cotizaciones/${consultaId}/nueva-version?desde=${datos.vigenteId}`, leerDesde(parametros.volver)));
+
+  // A la cotización, con su propio origen si se vino de ella (pedido 43): al guardar, vuelve a donde se estaba antes
+  const llegada = leerDesde(parametros.volver);
+  const volver = llegada?.split("?")[0] === `/panel/cotizaciones/${consultaId}` ? llegada : (`/panel/cotizaciones/${consultaId}` as Route);
+  const enlace = "font-semibold underline";
+
+  return (
+    <>
+      {/* Recorrido visual del 24/11, como Nueva cotización: "Nueva versión" con la cotización y lo que pasa con la anterior
+          debajo, y para quién en una línea (era una tarjeta grande arriba del formulario) */}
+      <EncabezadoPagina
+        titulo="Nueva versión"
+        subtitulo={datos.desde ? `Cotización ${datos.desde.numero} · será la versión ${datos.desde.version + 1}; la ${datos.desde.version} queda como estaba, con su PDF` : undefined}
+        volver={{ href: volver, texto: datos.desde ? `Cotización ${datos.desde.numero}` : "Cotización" }}
+      />
+
+      {/* Con el formulario, en la computadora va al costado con el total (FormularioNuevaVersion) */}
+      <div className={datos.estado === "cotizado" && datos.desde && datos.opciones.length > 0 ? "@4xl:hidden" : undefined}>
+        <ParaQuien etiqueta="Cotización para" nombre={datos.cliente} placa={datos.placa ?? "Sin registrar"} tamano={datos.tamano} />
+      </div>
+
+      {datos.estado !== "cotizado" ? (
+        <EstadoVacio>
+          La cotización está {NOMBRE_ESTADO[datos.estado].toLowerCase()}: {datos.estado === "perdido" ? "vuelve a ponerla pendiente para cambiarla" : "ya no se cambia"}.{" "}
+          <Link href={volver} className={enlace}>Volver a la cotización</Link>
+        </EstadoVacio>
+      ) : !datos.desde ? (
+        <EstadoVacio>
+          Esa versión ya fue reemplazada.{" "}
+          <Link href={volver} className={enlace}>Ver la vigente</Link>
+        </EstadoVacio>
+      ) : datos.opciones.length === 0 ? (
+        <EstadoVacio>No hay servicios activos para cotizar: se activan en Catálogo y precios.</EstadoVacio>
+      ) : (
+        // La key lo vuelve a montar al cambiar de versión: Next conserva la página anterior y el formulario guardaba
+        // las líneas de la visita de antes
+        <FormularioNuevaVersion volver={volver} key={datos.desde.id} datos={{ ...datos, desde: datos.desde }} hoy={fechaEnBolivia()} />
+      )}
+    </>
+  );
+}

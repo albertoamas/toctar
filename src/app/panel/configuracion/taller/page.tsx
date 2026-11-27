@@ -1,0 +1,41 @@
+import type { Metadata } from "next";
+import { Suspense } from "react";
+import { Cargando } from "@/componentes/panel/cargando";
+import { exigirModulo } from "@/lib/sesion";
+import { ListaEditable } from "@/modulos/configuracion/componentes/lista-editable";
+import { listarElementos } from "@/modulos/configuracion/consultas";
+import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
+import { PaginaPanel } from "@/componentes/panel/pagina-panel";
+
+export const metadata: Metadata = { title: "Configuración del taller" };
+
+// HU-05: los tamaños de vehículo (RN-07; los espacios del taller se quitaron en el pedido 55); pedido 12: las partes del
+// checklist de recepción.
+// Solo el dueño. Pulido 13.27: una lista debajo de la otra (en dos columnas, el checklist quedaba solo con un hueco al lado).
+export default function PaginaTaller() {
+  return (
+    <PaginaPanel tipo="ficha">
+      <EncabezadoPagina titulo="Taller" volver={{ href: "/panel/configuracion", texto: "Configuración" }} />
+      <Suspense fallback={<Cargando />}>
+        <Contenido />
+      </Suspense>
+    </PaginaPanel>
+  );
+}
+
+async function Contenido() {
+  await exigirModulo("configuracion");
+  const [tamanos, partes, marcas] = await Promise.all([listarElementos("tamanos"), listarElementos("partes"), listarElementos("marcas")]);
+  return (
+    <div className="flex flex-col gap-10">
+      <ListaEditable
+        lista="tamanos"
+        elementos={tamanos}
+        descripcion="Los precios de cada servicio se cargan por tamaño. El orden es el de las listas al cotizar."
+      />
+      <ListaEditable lista="partes" elementos={partes} descripcion="Lo que se revisa al recibir un vehículo, en este orden." />
+      {/* Pedido 52: la marca de un vehículo se elige de esta lista; una escrita al registrar un vehículo se suma sola */}
+      <ListaEditable lista="marcas" elementos={marcas} descripcion="La marca de un vehículo se elige de esta lista. Una que no está se suma sola al registrarla." />
+    </div>
+  );
+}

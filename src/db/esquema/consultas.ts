@@ -1,0 +1,121 @@
+import { sql } from "drizzle-orm";
+import { check, index, integer, jsonb, pgTable, primaryKey, text, timestamp } from "drizzle-orm/pg-core";
+import { usuario } from "./acceso";
+import { cliente, vehiculo } from "./clientes";
+import { archivo, tamanoVehiculo } from "./configuracion";
+import { servicio } from "./sitio";
+
+// Consultas (C2, HU-24 y HU-28) y auditoría (RNF-10). Especificación: docs/08-desarrollo/etapas/C2-consultas-cotizaciones.md §4.
+// Pedido 23 (P23-cotizacion-directa.md §4, D-12): la consulta es el encabezado de una cotización, que agrupa sus
+// versiones y lleva su estado (cotizado = pendiente, confirmado = aceptada, perdido = rechazada). En la interfaz ya no
+// existe la consulta: "consulto", el canal, la nota y los archivos quedan solo en lo registrado antes.
+
+const momento = (nombre: string) => timestamp(nombre, { withTimezone: true });
+
+export const CANALES = ["whatsapp", "taller"] as const;
+export type Canal = (typeof CANALES)[number];
+export const ESTADOS_CONSULTA = ["consulto", "cotizado", "confirmado", "perdido"] as const;
+export type EstadoConsulta = (typeof ESTADOS_CONSULTA)[number];
+export const MOTIVOS_PERDIDA = ["precio", "no_respondio", "otro"] as const;
+export type MotivoPerdida = (typeof MOTIVOS_PERDIDA)[number];
+
+const lista = (valores: readonly string[]) => sql.raw(valores.map((v) => `'${v}'`).join(", "));
+
+/** Cada consulta de un cliente por un vehículo (RF-29), con su estado (RF-30) y su último movimiento (RF-35). */
+export const consulta = pgTable(
+  "consulta",
+  {
+    id: integer("id").generatedByDefaultAsIdentity().primaryKey(),
+    /** El cliente y su vehículo; vacíos en la cotización de un interesado (P31b), hasta que se registra al reservar. */
+    clienteId: integer("cliente_id").references(() => cliente.id),
+    vehiculoId: integer("vehiculo_id").references(() => vehiculo.id),
+    /**
+     * Pedido 31, parte 2 (P31b-cotizacion-rapida.md): quien cotiza y nunca vuelve no se registra como cliente. La
+     * cotización guarda su nombre, su WhatsApp (formato internacional, como el del cliente), la placa (normalizada, como
+     * la del vehículo; la pide la pantalla, la base no: las de antes del 22/11 no la tienen), su tamaño, que da el precio,
+     * y una foto opcional (consulta_archivo). Al reservar se registran el cliente y el vehículo con esto, y queda como estaba.
+     */
+    interesadoNombre: text("interesado_nombre"),
+    interesadoTelefono: text("interesado_telefono"),
+    interesadoPlaca: text("interesado_placa"),
+    interesadoTamanoId: integer("interesado_tamano_id").references(() => tamanoVehiculo.id),
+    /** Vacío: el cliente todavía no sabe qué servicio quiere. */
+    servicioId: integer("servicio_id").references(() => servicio.id),
+    /** Solo en las consultas de antes del pedido 23. */
+    canal: text("canal").$type<Canal>(),
+    estado: text("estado").$type<EstadoConsulta>().default("consulto").notNull(),
+    motivoPerdida: text("motivo_perdida").$type<MotivoPerdida>(),
+    detallePerdida: text("detalle_perdida"),
+    nota: text("nota"),
+    ultimoMovimientoAt: momento("ultimo_movimiento_at").defaultNow().notNull(),
+    createdAt: momento("created_at").defaultNow().notNull(),
+    createdBy: integer("created_by")
+      .notNull()
+      .references(() => usuario.id),
+  },
+  (t) => [
+    check("consulta_canal_valido", sql`${t.canal} in (${lista(CANALES)})`),
+    check("consulta_estado_valido", sql`${t.estado} in (${lista(ESTADOS_CONSULTA)})`),
+    check("consulta_motivo_valido", sql`${t.motivoPerdida} in (${lista(MOTIVOS_PERDIDA)})`),
+    // El motivo va solo con "perdido", y "perdido" siempre lo lleva
+    check("consulta_motivo_si_perdida", sql`(${t.estado} = 'perdido') = (${t.motivoPerdida} is not null)`),
+    index("consulta_por_estado").on(t.estado, t.ultimoMovimientoAt),
+    index("consulta_por_cliente").on(t.clienteId),
+    // De un cliente con su vehículo, o de un interesado con lo que da el precio; nunca de ninguno
+    check(
+      "consulta_cliente_o_interesado",
+      sql`(${t.clienteId} is not null and ${t.vehiculoId} is not null) or (${t.interesadoNombre} is not null and ${t.interesadoTelefono} is not null and ${t.interesadoTamanoId} is not null)`,
+    ),
+  ],
+);
+
+/** Fotos y videos de una consulta (RF-29). Privados: son datos de clientes. */
+export const consultaArchivo = pgTable(
+  "consulta_archivo",
+  {
+    consultaId: integer("consulta_id")
+      .notNull()
+      .references(() => consulta.id),
+    archivoId: integer("archivo_id")
+      .notNull()
+      .references(() => archivo.id),
+    orden: integer("orden").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.consultaId, t.archivoId] })],
+);
+
+/**
+ * Permisos de subida directa de videos que todavía no se registraron (HU-24). Cuentan para el límite de la consulta:
+ * sin esto, pedir permisos sin registrar los videos llenaría el almacenamiento. Al vencer, se borran con su archivo.
+ */
+export const subidaPendiente = pgTable(
+  "subida_pendiente",
+  {
+    clave: text("clave").primaryKey(),
+    consultaId: integer("consulta_id")
+      .notNull()
+      .references(() => consulta.id),
+    createdBy: integer("created_by")
+      .notNull()
+      .references(() => usuario.id),
+    expiraAt: momento("expira_at").notNull(),
+  },
+  (t) => [index("subida_pendiente_por_consulta").on(t.consultaId), index("subida_pendiente_por_vencimiento").on(t.expiraAt)],
+);
+
+/** Quién y cuándo crea o cambia cotizaciones y, en C3, pagos (RNF-10). Solo se agregan filas. */
+export const auditoria = pgTable(
+  "auditoria",
+  {
+    id: integer("id").generatedByDefaultAsIdentity().primaryKey(),
+    usuarioId: integer("usuario_id")
+      .notNull()
+      .references(() => usuario.id),
+    entidad: text("entidad").notNull(),
+    entidadId: integer("entidad_id").notNull(),
+    accion: text("accion").notNull(),
+    datos: jsonb("datos").$type<Record<string, unknown>>().notNull(),
+    createdAt: momento("created_at").defaultNow().notNull(),
+  },
+  (t) => [index("auditoria_por_entidad").on(t.entidad, t.entidadId)],
+);

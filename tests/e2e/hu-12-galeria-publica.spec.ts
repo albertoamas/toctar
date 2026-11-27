@@ -1,0 +1,107 @@
+import { expect, test, type Locator } from "@playwright/test";
+import { ingresarComoDueno, PNG } from "./apoyo";
+
+// HU-12 Galería pública. Criterios: docs/09-pruebas/criterios-entrega-1.md (12.1 a 12.3).
+// Sube sus propias fotos por el panel (con servicios que no usa la prueba de HU-09) y las busca por su descripción.
+
+const foto = (nombre: string) => ({ name: nombre, mimeType: "image/png", buffer: PNG });
+
+test("la galería muestra los trabajos en una vitrina pareja, se filtra y los pares se comparan en la página", async ({ page }, info) => {
+  test.setTimeout(60_000);
+  const sufijo = info.project.name === "celular" ? "c" : "e";
+  const conPar = `Faroles como nuevos ${sufijo}`;
+  const sola = `Polarizado de prueba ${sufijo}`;
+
+  await ingresarComoDueno(page);
+  await page.goto("/panel/sitio/galeria");
+  for (const [servicio, descripcion, antes] of [["Restauración de faroles con polímero", conPar, true], ["Polarizado de vidrios", sola, false]] as const) {
+    await page.getByRole("button", { name: "Subir fotos" }).click();
+    await expect(page.getByRole("button", { name: "Guardar en la galería" })).toBeEnabled();
+    if (antes) await page.getByLabel("Galería para la foto del antes").setInputFiles(foto("antes.png"));
+    await page.getByLabel("Galería para la foto del después").setInputFiles(foto("despues.png"));
+    await page.getByLabel("Servicio").selectOption({ label: servicio });
+    await page.getByLabel("Descripción").fill(descripcion);
+    await page.getByRole("button", { name: "Guardar en la galería" }).click();
+    // Se espera a ver la foto en la lista: el aviso de la subida anterior puede seguir en pantalla.
+    await expect(page.getByRole("list", { name: "Fotos de la galería" }).getByRole("listitem").filter({ hasText: descripcion })).toHaveCount(1);
+  }
+
+  await page.goto("/galeria");
+  // Pedido 34: dos secciones, los antes y después arriba (comparables ahí mismo) y las fotos solas debajo; cada trabajo,
+  // en su tarjeta, con su servicio y "Ver el servicio", que lleva a su página
+  await expect(page.getByRole("heading", { level: 2, name: "Antes y después" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: "Más trabajos" })).toBeVisible();
+  const par = page.getByRole("list", { name: "Antes y después" }).getByRole("listitem").filter({ has: page.getByRole("img", { name: `Después: ${conPar}` }) });
+  const fotoSola = page.getByRole("list", { name: "Más trabajos" }).getByRole("listitem").filter({ has: page.getByRole("img", { name: sola }) });
+  await expect(par.getByRole("img", { name: `Antes: ${conPar}` })).toBeVisible();
+  await expect(fotoSola).toBeVisible();
+  await expect(par.getByRole("link", { name: "Ver el servicio: Restauración de faroles con polímero" })).toHaveAttribute("href", "/servicios/restauracion-de-faroles-con-polimero");
+  // Las fotos de la prueba son cuadradas: el par va en 4:3 (cuadrado solo con fotos verticales, unitaria formaDelPar), y
+  // la foto sola también; el par, más grande (dos por fila, o uno en el celular)
+  const [cajaPar, cajaSola] = [(await par.getByRole("img", { name: `Después: ${conPar}` }).boundingBox())!, (await fotoSola.getByRole("img").boundingBox())!];
+  expect(Math.abs(cajaPar.width / cajaPar.height - 4 / 3)).toBeLessThan(0.02);
+  expect(Math.abs(cajaSola.width / cajaSola.height - 4 / 3)).toBeLessThan(0.02);
+  if (info.project.name === "escritorio") expect(cajaPar.width).toBeGreaterThan(cajaSola.width);
+  // Sin visor ni descripciones a la vista
+  await expect(page.getByRole("button", { name: /^Ampliar/ })).toHaveCount(0);
+  await expect(page.getByRole("main")).not.toContainText(conPar);
+
+  // Filtro por servicio. En el celular, en una sola fila que se desliza (pulido 2.4)
+  const filtro = page.getByRole("navigation", { name: "Filtrar por servicio" });
+  if (info.project.name === "celular") expect((await filtro.boundingBox())!.height).toBeLessThan(60);
+  await filtro.getByRole("link", { name: "Restauración de faroles con polímero" }).click();
+  await expect(page).toHaveURL(/servicio=restauracion-de-faroles-con-polimero/);
+  await expect(fotoSola).toHaveCount(0);
+
+  // La línea del primer par se mueve sola un momento, como en la portada (pedido 34); los demás, quietos. Se mide la
+  // variable --corte de la caja, porque el deslizador queda en el medio mientras tanto. El primero puede ser el del otro
+  // proyecto (celular y escritorio suben el suyo a la vez): se mira el primero de la lista
+  const corte = (img: Locator) => img.evaluate((e) => Number(getComputedStyle(e.closest("[style*='--corte']")!).getPropertyValue("--corte")));
+  const primero = page.getByRole("list", { name: "Antes y después" }).getByRole("listitem").first().getByRole("img", { name: /^Después: / });
+  await primero.scrollIntoViewIfNeeded();
+  await expect.poll(() => corte(primero), { timeout: 8000 }).not.toBe(50);
+  const despuesDelPar = par.getByRole("img", { name: `Después: ${conPar}` });
+  const posicion = () => corte(despuesDelPar);
+
+  // El comparador, en la página: con el teclado, las flechas mueven la línea. Al tomar el foco deja de moverse sola y
+  // queda donde estaba (como en la portada): la flecha suma desde ahí
+  const linea = par.getByRole("slider", { name: "Comparar antes y después" });
+  await expect(linea).toHaveValue("50");
+  await linea.focus();
+  await expect.poll(async () => Number(await linea.inputValue()) === Math.round(await posicion())).toBe(true);
+  const quieta = Number(await linea.inputValue());
+  await page.keyboard.press("ArrowRight");
+  await expect(linea).toHaveValue(String(Math.min(100, quieta + 1)));
+  // Con el dedo o el mouse: un toque cerca del borde izquierdo la lleva ahí, y un arrastre de costado, hasta donde se suelta
+  // (antes, el par a la vista: los toques van a coordenadas de la pantalla)
+  await despuesDelPar.evaluate((img) => img.scrollIntoView({ block: "center" }));
+  const caja = (await despuesDelPar.boundingBox())!;
+  await page.mouse.click(caja.x + caja.width * 0.2, caja.y + caja.height / 2);
+  await expect.poll(async () => Number(await linea.inputValue())).toBeLessThan(30);
+  await page.mouse.move(caja.x + caja.width * 0.5, caja.y + caja.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(caja.x + caja.width * 0.8, caja.y + caja.height / 2, { steps: 5 });
+  await page.mouse.up();
+  await expect.poll(async () => Number(await linea.inputValue())).toBeGreaterThan(70);
+  // No abre nada al tocarla
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.locator("main")).not.toContainText(/\bBs\b/);
+
+  // Más trabajos en TikTok (pedido de la demo del 24/10): un enlace a su perfil, que carga preparar.setup.ts
+  await expect(page.getByRole("link", { name: "Mira nuestros trabajos en TikTok" })).toHaveAttribute("href", "https://www.tiktok.com/@toctar.detailing");
+
+  // Termina con la invitación a mandar fotos: un solo WhatsApp a la vista
+  // El título del cierre arriba de la pantalla: su botón se ve con él
+  const titulo = page.getByRole("heading", { name: "¿Quieres este resultado en tu vehículo?" });
+  await titulo.evaluate((e) => e.scrollIntoView({ block: "start" }));
+  await expect(titulo).toBeInViewport();
+  await expect(page.getByRole("link", { name: "Mandar fotos de mi vehículo por WhatsApp" })).toBeInViewport();
+  await expect(page.getByRole("link", { name: "Escribir a TocTar por WhatsApp" })).toBeHidden();
+
+  // En la página del servicio, sus trabajos a la vista (pulido de Servicios, 21/11: antes, un botón suelto a la galería),
+  // sin "Ver el servicio": ya se está ahí
+  await page.goto("/servicios/restauracion-de-faroles-con-polimero");
+  const suyos = page.getByRole("list", { name: "Nuestros trabajos" });
+  await expect(suyos.getByRole("listitem").first()).toBeVisible();
+  await expect(suyos.getByRole("link", { name: /^Ver el servicio/ })).toHaveCount(0);
+});

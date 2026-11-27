@@ -1,0 +1,182 @@
+import { expect, test, type TestInfo } from "@playwright/test";
+import { crearClienteEnBase, crearCotizacionEnBase, crearOrdenLista, ingresarComoDueno, editarVehiculo } from "./apoyo";
+
+// HU-23 Ficha del cliente. Especificación: docs/08-desarrollo/etapas/C1-catalogo-clientes.md §9.
+// Cada proyecto (celular o escritorio) usa sus propios teléfonos y placas, y cada reintento los suyos: con los mismos, el
+// reintento chocaba con la placa del intento anterior y nunca podía pasar.
+
+const sufijo = (info: TestInfo) => (info.project.name === "celular" ? "C" : "E") + (info.retry ? String(info.retry) : "");
+const telefono = (info: TestInfo, n: number) => `5917${info.project.name === "celular" ? 5 : 6}000${info.retry}${n}0`;
+
+// El color vacío al reabrir un vehículo recién guardado salió de vez en cuando (criterio 23.7 de
+// docs/09-pruebas/criterios-entrega-2.md): el registro del primer fallo lo guarda playwright.config.ts para todas.
+
+test("en la ficha los datos se leen y se editan en un modal; un teléfono de otro cliente se avisa", async ({ page }, info) => {
+  const s = sufijo(info);
+  const otro = `Otro de la ficha ${s}`;
+  await crearClienteEnBase({ nombre: otro, telefono: telefono(info, 1) });
+  const id = await crearClienteEnBase({ nombre: `Ficha ${s}`, telefono: telefono(info, 2) });
+  await ingresarComoDueno(page);
+  await page.goto(`/panel/clientes/${id}`, { waitUntil: "networkidle" });
+
+  await expect(page.getByRole("link", { name: "Escribir por WhatsApp" })).toHaveAttribute("href", `https://wa.me/${telefono(info, 2)}`);
+  // En lectura, solo lo que tiene valor: sin correo, no hay fila de correo. Sin el WhatsApp (26/11: está debajo del nombre)
+  const datos = page.getByRole("region", { name: "Datos" });
+  await expect(datos).toContainText("Sin correo, NIT ni notas.");
+  await expect(datos).not.toContainText("WhatsApp");
+
+  const editar = page.getByRole("button", { name: "Editar datos del cliente" });
+  await editar.click();
+  const modal = page.getByRole("dialog", { name: "Datos del cliente" });
+  // Los datos vienen cargados para editar; el teléfono, sin el código de país. El foco, en el primer campo
+  await expect(modal.getByLabel("Nombre", { exact: true })).toBeFocused();
+  await expect(modal.getByLabel("WhatsApp")).toHaveValue(telefono(info, 2).slice(3));
+
+  await modal.getByLabel("Correo").fill("no es correo");
+  await modal.getByRole("button", { name: "Guardar datos" }).click();
+  await expect(modal.getByText("Escribe un correo válido.")).toBeVisible();
+  await expect(modal.getByLabel("Correo")).toBeFocused();
+
+  await modal.getByLabel("Correo").fill("ficha@example.com");
+  await modal.getByLabel("WhatsApp").fill(telefono(info, 1).slice(3));
+  await modal.getByRole("button", { name: "Guardar datos" }).click();
+  await expect(modal.getByText(`Ese número ya es de ${otro}.`)).toBeVisible();
+  await expect(modal.getByRole("link", { name: `Abrir la ficha de ${otro}` })).toBeVisible();
+
+  await modal.getByLabel("WhatsApp").fill(telefono(info, 2).slice(3));
+  await modal.getByLabel("Nombre", { exact: true }).fill(`Ficha editada ${s}`);
+  await expect(modal.getByLabel("Nombre", { exact: true })).toHaveValue(`Ficha editada ${s}`);
+  await modal.getByRole("button", { name: "Guardar datos" }).click();
+  await expect(page.getByText("Cambios guardados.")).toBeVisible();
+  // El modal se cierra, el foco vuelve a "Editar" y la lectura muestra lo nuevo
+  await expect(modal).toBeHidden();
+  await expect(editar).toBeFocused();
+  await expect(page.getByRole("heading", { level: 1, name: `Ficha editada ${s}` })).toBeVisible();
+  await expect(datos).toContainText("ficha@example.com");
+});
+
+test("los vehículos se agregan en la ficha del cliente y se editan, desactivan y reactivan en la suya (pedido 51)", async ({ page }, info) => {
+  const s = sufijo(info);
+  const id = await crearClienteEnBase({ nombre: `Con autos ${s}`, telefono: telefono(info, 3) });
+  // Otro cliente con una placa: la de la ficha no puede repetirla
+  await crearClienteEnBase({ nombre: `Dueño de la placa ${s}`, telefono: telefono(info, 4), placa: `OCU${s}1` });
+  await ingresarComoDueno(page);
+  await page.goto(`/panel/clientes/${id}`, { waitUntil: "networkidle" });
+  const vehiculos = page.getByRole("list", { name: "Vehículos", exact: true });
+
+  // Agregar
+  await page.getByRole("button", { name: "Agregar vehículo" }).click();
+  const nuevo = page.getByRole("dialog", { name: "Agregar vehículo" });
+  await expect(nuevo.getByLabel("Placa", { exact: true })).toBeFocused();
+  await nuevo.getByLabel("Placa", { exact: true }).fill(`ocu-${s.toLowerCase()} 1`);
+  await nuevo.getByLabel("Tamaño", { exact: true }).selectOption({ label: "Compactos" });
+  await nuevo.getByRole("button", { name: "Agregar vehículo" }).click();
+  await expect(nuevo.getByText(`La placa OCU${s}1 ya está registrada a nombre de Dueño de la placa ${s}.`)).toBeVisible();
+  // Tras el error, el tamaño elegido se conserva: React reinicia el formulario y antes se perdía la elección
+  await expect(nuevo.getByLabel("Tamaño", { exact: true })).not.toHaveValue("");
+  await nuevo.getByLabel("Placa", { exact: true }).fill(`FIC${s}1`);
+  await nuevo.getByRole("button", { name: "Agregar vehículo" }).click();
+  await expect(page.getByText(`Vehículo FIC${s}1 agregado.`)).toBeVisible();
+  await expect(nuevo).toBeHidden();
+  await expect(vehiculos).toContainText(`FIC${s}1`);
+
+  // Tocar el vehículo abre su ficha (pedido 51): ahí se edita
+  await vehiculos.getByRole("link", { name: new RegExp(`FIC${s}1`) }).click();
+  await expect(page.getByRole("heading", { level: 1, name: `FIC${s}1` })).toBeVisible();
+  // Editar, desde "Más" (26/11): marca, modelo, año y color están plegados porque el vehículo no los tiene
+  const edicion = await editarVehiculo(page, `FIC${s}1`);
+  await edicion.getByText("Agregar marca, modelo, año y color").click();
+  // El color, escrito (20/11)
+  await edicion.getByLabel("Color").fill("Rojo");
+  await edicion.getByRole("button", { name: "Guardar vehículo" }).click();
+  await expect(edicion).toBeHidden();
+  // Se ve debajo de la placa (26/11: ya sin la tarjeta "Datos")
+  await expect(page.getByRole("main").getByText(/Rojo/).first()).toBeVisible();
+  // Al volver a abrirlo trae lo guardado, ya desplegado
+  await editarVehiculo(page, `FIC${s}1`);
+  await expect(edicion.getByLabel("Color")).toHaveValue("Rojo");
+  // Al editar, cerrarlo es "Listo" y no borra lo guardado (pulido final del 10/11: "Quitar" lo habría vaciado)
+  await expect(edicion.getByRole("button", { name: /^Quitar/ })).toHaveCount(0);
+  await edicion.getByRole("button", { name: "Listo Marca, modelo, año y color" }).click();
+  await expect(edicion.getByLabel("Color")).toBeHidden();
+  await edicion.getByText("Agregar marca, modelo, año y color").click();
+  await expect(edicion.getByLabel("Color")).toHaveValue("Rojo");
+
+  await edicion.getByRole("button", { name: "Cancelar" }).click();
+  await expect(edicion).toBeHidden();
+
+  // Desactivar desde "Más" de su ficha, con confirmación, y reactivar
+  await page.getByRole("main").getByRole("button", { name: "Más" }).click();
+  // Con la máquina muy cargada, un toque justo al abrirse el menú puede no contar: se repite mientras el menú siga abierto
+  const desactivar = page.getByRole("menuitem", { name: "Desactivar vehículo" });
+  const confirmar = page.getByRole("dialog", { name: `¿Desactivar FIC${s}1?` });
+  await expect(async () => {
+    if (await desactivar.isVisible()) await desactivar.click({ timeout: 1000 });
+    await expect(confirmar).toBeVisible({ timeout: 2000 });
+  }).toPass({ timeout: 15000 });
+  await expect(confirmar.getByRole("button", { name: "Cancelar" })).toBeFocused();
+  await confirmar.getByRole("button", { name: "Sí, desactivar" }).click();
+  await expect(page.getByText(`FIC${s}1 desactivado.`)).toBeVisible();
+  await page.getByRole("button", { name: "Reactivar vehículo" }).click();
+  await expect(page.getByText(`FIC${s}1 reactivado.`)).toBeVisible();
+  // En la ficha del cliente, otra vez entre los activos
+  await page.goto(`/panel/clientes/${id}`, { waitUntil: "networkidle" });
+  await expect(vehiculos).toContainText(`FIC${s}1`);
+});
+
+test("un cliente se desactiva desde «Más» con confirmación, deja de salir en la lista y se reactiva", async ({ page }, info) => {
+  const nombre = `Para desactivar ${sufijo(info)}`;
+  const id = await crearClienteEnBase({ nombre, telefono: telefono(info, 5) });
+  await ingresarComoDueno(page);
+  await page.goto(`/panel/clientes/${id}`, { waitUntil: "networkidle" });
+
+  await page.getByRole("button", { name: "Más" }).click();
+  await page.getByRole("menuitem", { name: "Desactivar cliente" }).click();
+  const confirmar = page.getByRole("dialog", { name: "Desactivar cliente" });
+  await expect(confirmar).toContainText("deja de salir en la lista");
+  // El foco en "Cancelar": un Enter no desactiva. Al cancelar, vuelve a "Más"
+  await expect(confirmar.getByRole("button", { name: "Cancelar" })).toBeFocused();
+  await confirmar.getByRole("button", { name: "Cancelar" }).click();
+  await expect(confirmar).toBeHidden();
+  await expect(page.getByRole("button", { name: "Más" })).toBeFocused();
+
+  await page.getByRole("button", { name: "Más" }).click();
+  await page.getByRole("menuitem", { name: "Desactivar cliente" }).click();
+  await confirmar.getByRole("button", { name: "Sí, desactivar" }).click();
+  await expect(page.getByText("Cliente desactivado.")).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1 }).locator("..")).toContainText("Desactivado");
+  await expect(page.getByRole("button", { name: "Más" })).toHaveCount(0);
+
+  await page.goto(`/panel/clientes?q=${encodeURIComponent(nombre)}`);
+  await expect(page.getByText(`No hay clientes con «${nombre}».`)).toBeVisible();
+
+  await page.goto(`/panel/clientes/${id}`);
+  await page.getByRole("button", { name: "Reactivar cliente" }).click();
+  await expect(page.getByText("Cliente reactivado.")).toBeVisible();
+  await page.goto(`/panel/clientes?q=${encodeURIComponent(nombre)}`);
+  await expect(page.getByRole("link", { name: nombre })).toBeVisible();
+});
+
+test("la ficha del cliente dice lo de cada vehículo; su historia, en la ficha del vehículo, sin la placa en cada fila", async ({ page }, info) => {
+  const s = sufijo(info);
+  // Días lejos de hoy y propios de cada proyecto y reintento: no se mezclan con otras pruebas
+  const dias = 1700 + (info.project.name === "celular" ? 0 : 10) + info.retry * 2;
+  const id = await crearClienteEnBase({ nombre: `Un auto ${s}`, telefono: telefono(info, 7), placa: `DA23${s}1` });
+  await crearCotizacionEnBase({ placa: `DA23${s}1`, numero: `2023-${s}71` });
+  await crearOrdenLista({ placa: `DA23${s}1`, dias, precio: 500, pagado: 100 });
+  await ingresarComoDueno(page);
+  await page.goto(`/panel/clientes/${id}`);
+  // La ficha del cliente (26/11): sin historia; cada vehículo dice su último trabajo
+  await expect(page.getByRole("list", { name: "Historia" })).toHaveCount(0);
+  const vehiculo = page.getByRole("list", { name: "Vehículos", exact: true }).getByRole("link", { name: new RegExp(`DA23${s}1`) });
+  await expect(vehiculo).toContainText("Último trabajo:");
+  // La historia, en la ficha del vehículo (C7 §5.6): la cotización y la orden, sin la placa en cada fila (es la del título)
+  await vehiculo.click();
+  const historia = page.getByRole("list", { name: "Historia" }).getByRole("link");
+  await expect(historia).toHaveCount(2);
+  const cotizacion = historia.filter({ hasText: `2023-${s}71` });
+  await expect(cotizacion).not.toContainText(`DA23${s}1`);
+  const orden = historia.filter({ hasNotText: `2023-${s}71` });
+  await expect(orden).not.toContainText(`DA23${s}1`);
+  await expect(orden).toContainText("Debe 400 Bs");
+});

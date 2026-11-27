@@ -1,0 +1,175 @@
+import { describe, expect, test } from "vitest";
+import { iconoDe } from "@/modulos/sitio/beneficios";
+import { erroresDe } from "@/lib/formularios";
+import { PATRON_SLUG, crearSlug } from "@/lib/slug";
+import { mensajeColor } from "@/lib/whatsapp";
+import { esquemaId, esquemaIdFormulario, esquemaParteServicio, esquemaServicio, esquemaVisibilidad, loQueFaltaEnPagina, motivoParaNoMostrar } from "@/modulos/sitio/esquemas";
+
+// HU-07 Servicios del sitio: la página de cada servicio. Criterios: docs/09-pruebas/criterios-entrega-1.md (7.x). El
+// alta, el nombre y las variantes son del catálogo (tests/unit/catalogo.test.ts).
+
+describe("dirección de la página (slug)", () => {
+  test.each([
+    ["Pulido y nano cerámico", "pulido-y-nano-ceramico"],
+    ["Restauración de faroles con polímero", "restauracion-de-faroles-con-polimero"],
+    ["Lavado de interior — Premium!", "lavado-de-interior-premium"],
+    ["  Instalación de PPF  ", "instalacion-de-ppf"],
+    ["Año 2026 / ñandú", "ano-2026-nandu"],
+  ])("%s → %s", (nombre, slug) => {
+    expect(crearSlug(nombre)).toBe(slug);
+    expect(PATRON_SLUG.test(slug)).toBe(true);
+  });
+
+  test("sin letras ni números queda vacío (se usa 'servicio')", () => {
+    expect(crearSlug("¿?¡!")).toBe("");
+  });
+
+  test("no pasa de 80 caracteres ni termina en guion", () => {
+    const slug = crearSlug("palabra ".repeat(20));
+    expect(slug.length).toBeLessThanOrEqual(80);
+    expect(slug.endsWith("-")).toBe(false);
+  });
+});
+
+describe("esquema del servicio", () => {
+  const valido = {
+    id: "1",
+    slug: "pulido-y-nano-ceramico",
+    resumen: "Corregimos la pintura y la protegemos.",
+    beneficios: JSON.stringify([
+      { texto: "Brillo", icono: "brillo" },
+      { texto: "Protección", icono: "proteccion" },
+    ]),
+    pasos: JSON.stringify([{ titulo: "Lavado", detalle: "" }]),
+    colores: "[]",
+    visible: true,
+    opcionesEnEscalera: false,
+  };
+
+  test("acepta un servicio completo y convierte las listas", () => {
+    const r = esquemaServicio.parse(valido);
+    expect(r.beneficios).toEqual([
+      { texto: "Brillo", icono: "brillo" },
+      { texto: "Protección", icono: "proteccion" },
+    ]);
+    expect(r.pasos).toEqual([{ titulo: "Lavado", detalle: "" }]);
+  });
+
+  test.each([
+    ["resumen largo", { resumen: "x".repeat(161) }, { resumen: "Hasta 160 caracteres." }],
+    ["dirección con mayúsculas", { slug: "Pulido_Ceramico" }, { slug: "La dirección solo lleva minúsculas, números y guiones." }],
+    ["beneficio vacío", { beneficios: JSON.stringify([{ texto: "Brillo", icono: "brillo" }, { texto: " ", icono: "listo" }]) }, { "beneficios.1": "Escribe el beneficio o quita la fila." }],
+    ["ícono que no está en la lista", { beneficios: JSON.stringify([{ texto: "Brillo", icono: "cohete" }]) }, { "beneficios.0": "Elige un ícono de la lista." }],
+    ["más de 8 beneficios", { beneficios: JSON.stringify(Array(9).fill({ texto: "a", icono: "listo" })) }, { beneficios: "Hasta 8 beneficios." }],
+    ["paso sin título", { pasos: JSON.stringify([{ titulo: "", detalle: "x" }]) }, { "pasos.0": "Cada paso necesita un título." }],
+    ["más de 10 pasos", { pasos: JSON.stringify(Array(11).fill({ titulo: "a", detalle: "" })) }, { pasos: "Hasta 10 pasos." }],
+  ])("rechaza %s", (_, cambio, errores) => {
+    const r = esquemaServicio.safeParse({ ...valido, ...cambio });
+    expect(r.success).toBe(false);
+    expect(erroresDe(r.error!)).toEqual(errores);
+  });
+
+  test("RN-10: el servicio no tiene campos de precio", () => {
+    expect(Object.keys(esquemaServicio.shape).some((c) => /precio|monto|costo/i.test(c))).toBe(false);
+  });
+
+  test("el nombre no se cambia desde el sitio: es del catálogo", () => {
+    expect(Object.keys(esquemaServicio.shape)).not.toContain("nombre");
+  });
+});
+
+// Pulido 13.19: cada modal de la ficha guarda solo su parte
+describe("una parte de la página del servicio", () => {
+  test("cada parte valida solo sus campos: guardar los pasos no pide el resumen", () => {
+    const r = esquemaParteServicio.parse({ id: "3", parte: "pasos", pasos: JSON.stringify([{ titulo: "Lavado", detalle: "" }]), resumen: "" });
+    expect(r).toEqual({ id: 3, parte: "pasos", pasos: [{ titulo: "Lavado", detalle: "" }] });
+  });
+
+  test("lo que no es de la parte no pasa, aunque venga en el formulario", () => {
+    const r = esquemaParteServicio.parse({ id: "3", parte: "resumen", resumen: "Pulimos.", slug: "otra-direccion", beneficios: "[]" });
+    expect(r).toEqual({ id: 3, parte: "resumen", resumen: "Pulimos." });
+  });
+
+  test.each([
+    ["resumen vacío", { parte: "resumen", resumen: " " }, { resumen: "Escribe un resumen de una o dos frases." }],
+    ["dirección con mayúsculas", { parte: "direccion", slug: "Pulido_Ceramico" }, { slug: "La dirección solo lleva minúsculas, números y guiones." }],
+    ["beneficio vacío", { parte: "beneficios", beneficios: JSON.stringify([{ texto: " ", icono: "listo" }]) }, { "beneficios.0": "Escribe el beneficio o quita la fila." }],
+  ])("rechaza %s", (_, cambio, errores) => {
+    const r = esquemaParteServicio.safeParse({ id: "3", ...cambio });
+    expect(r.success).toBe(false);
+    expect(erroresDe(r.error!)).toEqual(errores);
+  });
+
+  test("se muestra en el sitio solo activo y con resumen (uno de espacios no vale)", () => {
+    expect(motivoParaNoMostrar({ activo: true, resumen: "Pulimos." })).toBeNull();
+    expect(motivoParaNoMostrar({ activo: true, resumen: "   " })).toBe("Escribe el resumen antes de mostrarlo en el sitio.");
+    expect(motivoParaNoMostrar({ activo: false, resumen: "Pulimos." })).toBe("Está inactivo en el catálogo: actívalo ahí primero.");
+  });
+
+  test("la lista dice lo que le falta a una página: primero el resumen, después pasos y foto juntos", () => {
+    const completa = { resumen: "Pulimos.", cantidadPasos: 3, conFoto: true };
+    expect(loQueFaltaEnPagina(completa)).toBeNull();
+    expect(loQueFaltaEnPagina({ ...completa, resumen: "  ", cantidadPasos: 0, conFoto: false })).toBe("Falta el resumen");
+    expect(loQueFaltaEnPagina({ ...completa, cantidadPasos: 0 })).toBe("Sin pasos");
+    expect(loQueFaltaEnPagina({ ...completa, conFoto: false })).toBe("Sin foto");
+    expect(loQueFaltaEnPagina({ ...completa, cantidadPasos: 0, conFoto: false })).toBe("Sin pasos ni foto");
+  });
+
+  test("una parte que no existe se rechaza", () => {
+    expect(esquemaParteServicio.safeParse({ id: "3", parte: "precios", precio: "100" }).success).toBe(false);
+  });
+});
+
+describe("datos sueltos de las acciones (revisión de seguridad)", () => {
+  test("los ids deben ser enteros positivos", () => {
+    expect(esquemaId.safeParse(3).success).toBe(true);
+    for (const malo of [0, -1, 1.5, Number.NaN, "3", null]) expect(esquemaId.safeParse(malo).success).toBe(false);
+    expect(esquemaIdFormulario.parse("7")).toBe(7);
+    expect(esquemaIdFormulario.safeParse("abc").success).toBe(false);
+  });
+
+  test("mostrar y ocultar piden un sí o no de verdad", () => {
+    expect(esquemaVisibilidad.safeParse({ id: 1, visible: "true" }).success).toBe(false);
+  });
+});
+
+describe("íconos de los beneficios", () => {
+  test("una clave guardada que ya no está en la lista se muestra con el ícono genérico", () => {
+    expect(iconoDe("sol")).toBe("sol");
+    expect(iconoDe("cohete")).toBe("listo");
+    // Ni las claves que todo objeto hereda
+    expect(iconoDe("constructor")).toBe("listo");
+  });
+});
+
+// Pedido 56: los colores del probador de la página del servicio (P56-probador-de-colores.md)
+describe("colores del probador", () => {
+  const colores = (lista: unknown[]) => ({ id: "3", parte: "colores", colores: JSON.stringify(lista) });
+
+  test("guarda nombre, color en minúsculas y acabado", () => {
+    const r = esquemaParteServicio.parse(colores([{ nombre: " Bronce ", hex: "#7A5530", acabado: "satinado" }]));
+    expect(r).toEqual({ id: 3, parte: "colores", colores: [{ nombre: "Bronce", hex: "#7a5530", acabado: "satinado" }] });
+  });
+
+  test("sin colores es válido: el probador no sale", () => {
+    expect(esquemaParteServicio.parse(colores([]))).toEqual({ id: 3, parte: "colores", colores: [] });
+  });
+
+  test.each([
+    ["sin nombre", { nombre: " ", hex: "#000000", acabado: "mate" }],
+    ["un color que no es #rrggbb", { nombre: "Rojo", hex: "rojo", acabado: "mate" }],
+    ["un acabado que no existe", { nombre: "Rojo", hex: "#ff0000", acabado: "cromado" }],
+  ])("rechaza %s", (_, color) => {
+    expect(esquemaParteServicio.safeParse(colores([color])).success).toBe(false);
+  });
+
+  test("hasta 12 colores", () => {
+    const uno = { nombre: "Negro", hex: "#000000", acabado: "mate" };
+    expect(esquemaParteServicio.safeParse(colores(Array(12).fill(uno))).success).toBe(true);
+    expect(esquemaParteServicio.safeParse(colores(Array(13).fill(uno))).success).toBe(false);
+  });
+
+  test("el mensaje de WhatsApp lleva el servicio y el color elegido", () => {
+    expect(mensajeColor("Repintado de aros", "Bronce", "Satinado")).toBe("Hola, quiero consultar por Repintado de aros en bronce satinado.");
+  });
+});

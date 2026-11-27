@@ -11,7 +11,7 @@ Una sola aplicación web sirve el sitio público y el panel. Corre en contenedor
 flowchart LR
     subgraph Usuarios
         V[Visitante<br/>navegador]
-        P[Dueño, encargado, técnico<br/>PWA en celular o PC]
+        P[Dueño y encargados<br/>PWA en celular o PC]
     end
 
     subgraph VPS[Servidor en la nube]
@@ -53,7 +53,7 @@ flowchart LR
 | PWA | Manifest + service worker mínimo (sin caché de datos) | Instalable, sin modo sin conexión (Acl-10) | — |
 | Pruebas | Vitest (reglas de negocio) + Playwright (flujos críticos) | Las reglas RN y los 5 flujos de secuencia quedan probados | — |
 | Contenedores | **Docker**: `Dockerfile` propio de la app y `docker-compose.yml` para desarrollo | La app se construye igual en la PC, en pruebas y en producción; no depende de lo instalado en el servidor y se puede mudar de proveedor en minutos | Instalar Node y PostgreSQL a mano en el servidor: cada servidor queda distinto |
-| Hosting | VPS (Hetzner o DigitalOcean, 2 GB RAM) con **Coolify** | Despliegue automático al hacer push, https automático, respaldos de PostgreSQL programados. Unos USD 5 a 8/mes | Vercel: el plan gratis no permite uso comercial y el Pro cuesta USD 20/mes; Railway: costo variable |
+| Hosting | VPS Hetzner CX23 (4 GB, Alemania; comparación en `07-preparacion/guia-de-despliegue.md`) con **Coolify** | Despliegue automático al hacer push, https automático, respaldos de PostgreSQL programados. Unos USD 5 a 8/mes | Vercel: el plan gratis no permite uso comercial y el Pro cuesta USD 20/mes; Railway: costo variable |
 | Monitoreo | UptimeRobot (gratis) | Aviso por correo si el sitio se cae | — |
 
 Las versiones exactas de cada librería se fijan en la etapa 7, al crear el proyecto, usando la última estable de ese momento.
@@ -64,9 +64,9 @@ Según el acuerdo, TocTar paga dominio y hosting al costo del proveedor; YankoSo
 
 | Concepto | Costo aproximado | Quién paga |
 |---|---|---|
-| VPS con 2 GB de RAM | USD 5 a 8/mes | TocTar desde el mes 2 |
+| VPS Hetzner CX23 (4 GB, Alemania) | unos USD 7/mes (€5,49 + IPv4) | TocTar desde el mes 2 |
 | Cloudflare R2 | Gratis hasta 10 GB | — |
-| Dominio .com | USD 10 a 15/año | TocTar desde el año 2 |
+| Dominio toctardetailing.com (Cloudflare, al costo) | USD 10,46/año; USD 11,15 desde el 1/11/2026 | TocTar desde el año 2 |
 | UptimeRobot, Coolify | Gratis | — |
 
 Se verifica el precio real al contratar y se le informa al dueño antes (acuerdo).
@@ -79,7 +79,7 @@ Se verifica el precio real al contratar y se le informa al dueño antes (acuerdo
 
 ### Permisos
 - Cada acción del servidor verifica la sesión y el rol antes de tocar datos (RNF-05). Un solo módulo `permisos.ts` define qué puede hacer cada rol y qué módulos tiene el encargado.
-- Las reglas sensibles se prueban automáticamente: solo el dueño cotiza (RN-01), el técnico no ve precios (RN-12), la entrega con saldo requiere al dueño (RN-13).
+- Las reglas sensibles se prueban automáticamente: cotiza el dueño o el encargado con el permiso (RN-01), sin Pagos ni Cotizaciones no se ven precios (RN-12), la entrega con saldo requiere al dueño o un encargado autorizado (RN-13).
 
 ### WhatsApp
 - **Botón del sitio y avisos:** enlaces `https://wa.me/591XXXXXXXX?text=...` con el mensaje armado desde la plantilla. Abren la app con el texto escrito; la persona envía.
@@ -87,8 +87,9 @@ Se verifica el precio real al contratar y se le informa al dueño antes (acuerdo
 - La API de WhatsApp queda fuera del alcance; el diseño la permite después sin cambiar las plantillas.
 
 ### Fotos
-- El celular sube la foto; el servidor la redimensiona (lado mayor 1600 px), la convierte a WebP y la guarda en R2. Se guarda también una miniatura.
-- Videos de consultas: hasta 50 MB y 60 segundos, sin procesar (RNF-07). Se revisa si el espacio de R2 crece demasiado.
+- El celular sube la foto; el servidor la redimensiona (lado mayor 1600 px; las del sitio, también una de 1080 px para el celular, con la misma calidad, pulido 13.59), la convierte a WebP y la guarda en R2. Se guarda también una miniatura. El servidor rechaza imágenes de más de 70 megapíxeles (`src/lib/imagen.ts`).
+- Dos buckets por entorno. **Público** (`S3_BUCKET`): lo que muestra el sitio, servido desde `S3_URL_PUBLICA`. **Privado** (`S3_BUCKET_PRIVADO`): datos de clientes (fotos de las órdenes, firmas, comprobantes de pago, fotos de los reclamos y los PDF de las cotizaciones); sin acceso público, el panel las muestra con enlaces firmados que vencen a los 15 minutos (`src/lib/almacenamiento.ts`). `archivo.privado` dice en cuál está cada archivo.
+- El único video es el de la portada (pedido 48): hasta 20 MB, MP4 o MOV con H.264, o WebM, sin procesar. Se sube por su propia ruta (`panel/sitio/video`), no por una server action, por su tamaño (RNF-07).
 
 ### PDF de cotización
 - Se genera al guardar la cotización y se guarda en R2; no se regenera después, así el PDF enviado nunca cambia (RN-02).
@@ -105,7 +106,7 @@ Se verifica el precio real al contratar y se le informa al dueño antes (acuerdo
 
 | Entorno | Dónde | Para qué | Se actualiza |
 |---|---|---|---|
-| Desarrollo | PC de YankoSoft: la app corre con `npm run dev` y PostgreSQL y MinIO (imita a R2) en `docker compose` | Programar | Siempre |
+| Desarrollo | PC de YankoSoft: la app corre con `npm run dev` y PostgreSQL y RustFS (imita a R2) en `docker compose` | Programar | Siempre |
 | Pruebas | `pruebas.<dominio>` en el mismo VPS, con su propia base | Revisión semanal del dueño | Push a la rama `develop` |
 | Producción | `<dominio>` | Uso real | Push a la rama `main` |
 
@@ -115,13 +116,15 @@ El entorno de pruebas no se indexa en Google y tiene datos ficticios.
 
 | Dónde | Qué corre en Docker | Cómo |
 |---|---|---|
-| Desarrollo | PostgreSQL y MinIO | `docker compose up -d`. La app corre fuera de Docker para que la recarga en caliente sea rápida en Windows |
+| Desarrollo | PostgreSQL y RustFS | `docker compose up -d`. La app corre fuera de Docker para que la recarga en caliente sea rápida en Windows |
 | Pruebas y producción | La app y PostgreSQL | Coolify construye la imagen con el `Dockerfile` del repositorio en cada push y levanta PostgreSQL como servicio con su volumen y sus respaldos |
 
 - **`Dockerfile` en varias etapas:** instala dependencias, compila con la salida `standalone` de Next.js y deja una imagen final chica (solo lo necesario para correr), con usuario sin privilegios.
 - **Las migraciones** de la base se aplican al arrancar el contenedor, antes de aceptar tráfico.
 - **Configuración por variables de entorno** (`DATABASE_URL`, claves de R2, secreto de sesión); nunca en el código ni en la imagen. Un `.env.example` documenta cuáles hacen falta.
+- **`SITIO_URL` y `SITIO_INDEXABLE`** (HU-18) van también como variables de build en Coolify: el build fija con ellas `metadataBase` y el `noindex`. `SITIO_INDEXABLE=true` solo en producción.
 - **Misma versión de PostgreSQL** en desarrollo y producción, fijada en `docker-compose.yml` y en Coolify.
+- **A la app solo se llega por el proxy de Coolify (Traefik).** El puerto 3000 del contenedor no se publica en el VPS. El límite de reclamos por conexión (HU-16) toma la IP de `x-real-ip`, que pone Traefik; si la app quedara expuesta directo, un visitante podría inventarse ese encabezado y saltarse el límite. Se verifica al configurar A3. Con el proxy de Cloudflare (14/11, guía de despliegue, paso 3b), la IP del visitante viene en `CF-Connecting-IP`, que se usa solo si la conexión llega desde una IP de Cloudflare **y** trae el secreto de origen (`ORIGEN_CLOUDFLARE_SECRETO`, que agrega una regla de Cloudflare): WARP y los Workers salen desde esos rangos y podrían escribirlo a mano (`src/lib/ip-visitante.ts`). De una IPv6 cuenta su bloque /64.
 - No hace falta Kubernetes ni nada más complejo: un solo servidor con Docker alcanza de sobra para este volumen.
 
 ## Estructura del proyecto
@@ -130,28 +133,36 @@ El entorno de pruebas no se indexa en Google y tiene datos ficticios.
 toctar/
 ├── CLAUDE.md                 contexto, convenciones y comandos para Claude Code
 ├── Dockerfile                imagen de la app para pruebas y producción
-├── docker-compose.yml        PostgreSQL y MinIO para desarrollo
+├── docker-compose.yml        PostgreSQL y RustFS para desarrollo
 ├── .env.example              variables de entorno necesarias
 ├── docs/                     esta documentación
+├── scripts/                  preparar el almacenamiento, reiniciar la base local o la de las E2E, datos de demostración
+├── material/                 archivos del cliente y fotos de la demo (fuera de Git)
 ├── src/
 │   ├── app/
 │   │   ├── (sitio)/          páginas públicas
-│   │   ├── panel/            panel interno (requiere sesión)
-│   │   └── api/              rutas para subir archivos y generar PDF
-│   ├── modulos/              un directorio por módulo: clientes, catalogo, cotizaciones,
-│   │                         agenda, trabajos, pagos, mantenimiento, sitio, configuracion
-│   │   └── <modulo>/         acciones.ts (servidor), consultas.ts, esquemas.ts (zod), componentes/
-│   ├── db/                   esquema de Drizzle y migraciones
-│   ├── lib/                  autenticación, permisos, almacenamiento, whatsapp, pdf, fechas
-│   └── componentes/          componentes de interfaz compartidos
+│   │   ├── ingresar/         ingreso al panel
+│   │   ├── panel/            panel interno (requiere sesión); el PDF de una cotización es una ruta de aquí
+│   │   │                     (panel/cotizaciones/[id]/pdf)
+│   │   └── api/salud/        estado de la app, para Docker, Coolify y UptimeRobot
+│   ├── modulos/              un directorio por módulo: acceso, usuarios, configuracion, sitio, reclamos, inicio,
+│   │                         catalogo, clientes, cotizaciones, agenda, ordenes, pagos, mantenimientos
+│   │   └── <modulo>/         acciones.ts (servidor), consultas.ts, esquemas.ts (zod), reglas.ts (puras), componentes/
+│   │                         (si uno crece de ~400 líneas, una carpeta por tema: ordenes/acciones/recepcion.ts, entrega.ts…; lo compartido en comun.ts)
+│   ├── db/                   esquema de Drizzle, migraciones y la conexión (src/db/index.ts)
+│   ├── lib/                  sesión y permisos, almacenamiento y fotos, fechas, WhatsApp, formularios
+│   ├── proxy.ts              redirección rápida al ingreso si no hay cookie de sesión (no protege: cada página valida)
+│   └── componentes/          compartidos: ui/ (shadcn), sitio/ y panel/ (menú, avisos, campos…)
 └── tests/
     ├── unit/                 reglas de negocio (RN)
-    └── e2e/                  flujos críticos (diagramas de secuencia)
+    └── e2e/                  flujos críticos (diagramas de secuencia) y una prueba por historia
 ```
 
 ## Decisiones a confirmar
 
 - [x] Stack: Next.js + PostgreSQL + Drizzle + Better Auth, con Docker (aprobado el 10 de octubre de 2026).
 - [x] Prototipo de pantallas: no se hace; las pantallas se validan en la revisión semanal del entorno de pruebas.
-- [ ] Proveedor del VPS: Hetzner (más barato, servidores en Europa o EE. UU.) o DigitalOcean (más conocido). La latencia desde Bolivia es aceptable en ambos para este uso.
-- [ ] Cuenta de Cloudflare a nombre de TocTar (R2 y, opcionalmente, DNS del dominio).
+- [x] Proveedor del VPS: **Hetzner**, un CX23 en Nuremberg (octubre de 2026). La latencia desde Bolivia es aceptable para este uso.
+- [x] Cuenta de Cloudflare de TocTar: DNS del dominio `toctardetailing.com` (sin proxy) y R2 para las fotos, los PDF y los respaldos.
+
+Lo instalado en el servidor, cuenta por cuenta y sin secretos, está en `07-preparacion/servidor.md`.

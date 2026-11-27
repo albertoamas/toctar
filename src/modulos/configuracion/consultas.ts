@@ -1,0 +1,155 @@
+import "server-only";
+import { asc, desc, eq, sql } from "drizzle-orm";
+import { cacheLife, cacheTag } from "next/cache";
+import { db } from "@/db";
+import { archivo, categoriaGasto, marcaVehiculo, negocio, parametro, parteRevision, plantillaMensaje, sucursal, tamanoVehiculo, type Redes } from "@/db/esquema";
+import { urlArchivo } from "@/lib/almacenamiento";
+import type { DiaHorario } from "@/lib/horarios";
+import type { Coordenadas } from "@/lib/ubicacion";
+import type { Elemento, Lista } from "./listas";
+import { leerParametros, type Parametros } from "./parametros";
+import { plantillasVigentes, type Plantillas } from "./plantillas";
+
+// Lecturas de la configuración. Los datos del negocio los usa el sitio en cada página:
+// van en caché con la etiqueta "negocio", y las acciones que los cambian la invalidan (updateTag).
+
+export const ETIQUETA_NEGOCIO = "negocio";
+export const ETIQUETA_PARAMETROS = "parametros";
+export const ETIQUETA_PLANTILLAS = "plantillas";
+
+export type ConfiguracionNegocio = {
+  nombre: string;
+  correo: string | null;
+  redes: Redes;
+  nit: string | null;
+  razonSocial: string | null;
+  logo: { url: string; ancho: number | null; alto: number | null } | null;
+  sucursalId: number;
+  direccion: string;
+  coordenadas: Coordenadas | null;
+  enlaceMapa: string | null;
+  mapaInsertado: string | null;
+  horarios: DiaHorario[];
+  whatsapp: string | null;
+};
+
+/** La sucursal que se edita hoy: la primera activa (D-7: el modelo admite más). */
+export async function sucursalPrincipal() {
+  const [fila] = await db.select().from(sucursal).where(eq(sucursal.activo, true)).orderBy(asc(sucursal.id)).limit(1);
+  if (!fila) throw new Error("No hay ninguna sucursal activa: falta aplicar la migración 0003_datos_negocio.");
+  return fila;
+}
+
+/** Datos actuales, sin caché: para la pantalla de configuración y las acciones. */
+export async function obtenerConfiguracionNegocio(): Promise<ConfiguracionNegocio> {
+  const [n] = await db
+    .select({ negocio, logo: archivo })
+    .from(negocio)
+    .leftJoin(archivo, eq(negocio.logoArchivoId, archivo.id))
+    .where(eq(negocio.id, 1));
+  if (!n) throw new Error("Faltan los datos del negocio: falta aplicar la migración 0003_datos_negocio.");
+  const s = await sucursalPrincipal();
+  return {
+    nombre: n.negocio.nombre,
+    correo: n.negocio.correo,
+    redes: n.negocio.redes,
+    nit: n.negocio.nit,
+    razonSocial: n.negocio.razonSocial,
+    logo: n.logo ? { url: urlArchivo(n.logo.clave), ancho: n.logo.ancho, alto: n.logo.alto } : null,
+    sucursalId: s.id,
+    direccion: s.direccion,
+    coordenadas: s.lat !== null && s.lng !== null ? { lat: Number(s.lat), lng: Number(s.lng) } : null,
+    enlaceMapa: s.enlaceMapa,
+    mapaInsertado: s.mapaInsertado,
+    horarios: s.horarios,
+    whatsapp: s.telefonoWhatsapp,
+  };
+}
+
+/** Lo que muestra el sitio público (pie, contacto, botón de WhatsApp). En caché hasta que se edite. */
+export async function obtenerDatosPublicos(): Promise<DatosPublicos> {
+  "use cache";
+  cacheTag(ETIQUETA_NEGOCIO);
+  cacheLife("max");
+  const c = await obtenerConfiguracionNegocio();
+  return {
+    nombre: c.nombre,
+    correo: c.correo,
+    redes: c.redes,
+    direccion: c.direccion,
+    coordenadas: c.coordenadas,
+    enlaceMapa: c.enlaceMapa,
+    mapaInsertado: c.mapaInsertado,
+    horarios: c.horarios,
+    whatsapp: c.whatsapp,
+  };
+}
+
+export type DatosPublicos = Pick<
+  ConfiguracionNegocio,
+  "nombre" | "correo" | "redes" | "direccion" | "coordenadas" | "enlaceMapa" | "mapaInsertado" | "horarios" | "whatsapp"
+>;
+
+/** Parámetros vigentes (HU-05). En caché hasta que el dueño los cambie. */
+export async function obtenerParametros(): Promise<Parametros> {
+  "use cache";
+  cacheTag(ETIQUETA_PARAMETROS);
+  cacheLife("max");
+  return leerParametros(await db.select({ clave: parametro.clave, valor: parametro.valor }).from(parametro));
+}
+
+/** Los mensajes de WhatsApp vigentes (HU-40). En caché hasta que el dueño cambie uno. */
+export async function obtenerPlantillas(): Promise<Plantillas> {
+  "use cache";
+  cacheTag(ETIQUETA_PLANTILLAS);
+  cacheLife("max");
+  return plantillasVigentes(await db.select({ clave: plantillaMensaje.clave, texto: plantillaMensaje.texto }).from(plantillaMensaje));
+}
+
+/**
+ * Tamaños de vehículo, partes del checklist, marcas de vehículo o categorías de gasto: activos primero, en su orden;
+ * después los desactivados.
+ */
+export async function listarElementos(lista: Lista): Promise<Elemento[]> {
+  if (lista === "categorias") {
+    const categorias = await db
+      .select({ id: categoriaGasto.id, nombre: categoriaGasto.nombre, orden: categoriaGasto.orden, activo: categoriaGasto.activo })
+      .from(categoriaGasto)
+      .orderBy(desc(categoriaGasto.activo), asc(categoriaGasto.orden), asc(categoriaGasto.id));
+    return categorias.map((c) => ({ ...c, descripcion: null }));
+  }
+  if (lista === "marcas") {
+    const marcas = await db
+      .select({ id: marcaVehiculo.id, nombre: marcaVehiculo.nombre, orden: marcaVehiculo.orden, activo: marcaVehiculo.activo })
+      .from(marcaVehiculo)
+      // En orden alfabético, como se eligen en los formularios (C7 fase 3): una nueva no queda al final
+      .orderBy(desc(marcaVehiculo.activo), sql`lower(${marcaVehiculo.nombre})`);
+    return marcas.map((m) => ({ ...m, descripcion: null }));
+  }
+  if (lista === "partes") {
+    const partes = await db
+      .select({ id: parteRevision.id, nombre: parteRevision.nombre, orden: parteRevision.orden, activo: parteRevision.activo })
+      .from(parteRevision)
+      .orderBy(desc(parteRevision.activo), asc(parteRevision.orden), asc(parteRevision.id));
+    return partes.map((p) => ({ ...p, descripcion: null }));
+  }
+  const tamanos = await db
+    .select({ id: tamanoVehiculo.id, nombre: tamanoVehiculo.nombre, descripcion: tamanoVehiculo.descripcion, orden: tamanoVehiculo.orden, activo: tamanoVehiculo.activo })
+    .from(tamanoVehiculo)
+    .orderBy(desc(tamanoVehiculo.activo), asc(tamanoVehiculo.orden), asc(tamanoVehiculo.id));
+  return tamanos;
+}
+
+export type Tamano = { id: number; nombre: string; descripcion: string | null };
+
+/**
+ * Tamaños de vehículo activos, en su orden (RN-07): las columnas de precios del catálogo y la lista para elegir el
+ * tamaño de un vehículo. No es un dato reservado: lo leen el catálogo (dueño) y los clientes (encargado con permiso).
+ */
+export async function tamanosActivos(): Promise<Tamano[]> {
+  return db
+    .select({ id: tamanoVehiculo.id, nombre: tamanoVehiculo.nombre, descripcion: tamanoVehiculo.descripcion })
+    .from(tamanoVehiculo)
+    .where(eq(tamanoVehiculo.activo, true))
+    .orderBy(asc(tamanoVehiculo.orden), asc(tamanoVehiculo.id));
+}

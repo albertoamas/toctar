@@ -1,0 +1,2 @@
+ALTER TABLE "contenido_pagina" ADD COLUMN "foto_archivo_id" integer;--> statement-breakpoint
+ALTER TABLE "contenido_pagina" ADD CONSTRAINT "contenido_pagina_foto_archivo_id_archivo_id_fk" FOREIGN KEY ("foto_archivo_id") REFERENCES "public"."archivo"("id") ON DELETE no action ON UPDATE no action;

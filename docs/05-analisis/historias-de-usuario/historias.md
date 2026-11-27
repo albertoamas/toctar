@@ -36,17 +36,17 @@ Este es el backlog del proyecto. Cada historia se programa en el orden de la tab
 | HU-21 | Registrar clientes y vehículos | 2 | Imprescindible | M | RF-20, RF-21, RF-23 |
 | HU-22 | Buscar clientes | 2 | Imprescindible | S | RF-22 |
 | HU-23 | Ficha del cliente | 2 | Imprescindible | M | RF-24 |
-| HU-24 | Registrar consulta | 2 | Imprescindible | M | RF-29, RF-30 |
-| HU-25 | Armar cotización | 2 | Imprescindible | L | RF-31, RF-34 |
+| HU-24 | Registrar consulta (reemplazada por la cotización directa, pedido 23) | 2 | Imprescindible | M | RF-29, RF-30 |
+| HU-25 | Armar cotización (directa, pedido 23) | 2 | Imprescindible | L | RF-29, RF-31, RF-34 |
 | HU-26 | PDF de la cotización | 2 | Imprescindible | L | RF-32 |
 | HU-27 | Compartir el PDF | 2 | Imprescindible | S | RF-33 |
-| HU-28 | Seguimiento de consultas | 2 | Imprescindible | S | RF-30, RF-35 |
+| HU-28 | Seguimiento de cotizaciones | 2 | Imprescindible | S | RF-30, RF-35 |
 | HU-29 | Tablero de la agenda | 2 | Imprescindible | L | RF-38 |
 | HU-30 | Agendar reserva | 2 | Imprescindible | M | RF-36, RF-37 |
 | HU-31 | Reprogramar o cancelar | 2 | Imprescindible | S | RF-39 |
 | HU-32 | Registrar pagos y saldo | 2 | Imprescindible | M | RF-45, RF-46 |
 | HU-33 | Recibir vehículo | 2 | Imprescindible | M | RF-40 |
-| HU-34 | Órdenes del técnico | 2 | Imprescindible | M | RF-41, RF-42 |
+| HU-34 | Trabajar una orden | 2 | Imprescindible | M | RF-41, RF-42 |
 | HU-35 | Avisar vehículo listo | 2 | Imprescindible | S | RF-48 |
 | HU-36 | Entregar vehículo | 2 | Imprescindible | M | RF-43, RF-49 |
 | HU-37 | Saldos pendientes | 2 | Imprescindible | S | RF-47 |
@@ -67,17 +67,17 @@ Como usuario del panel, quiero entrar con mi usuario y contraseña, para usar so
 - La sesión vence tras un tiempo sin uso y puedo cerrarla cuando quiera.
 
 ### HU-02 Gestionar usuarios y roles
-Como dueño, quiero crear usuarios con su rol, para que cada persona tenga su acceso.
-- Creo un usuario con nombre, usuario, contraseña inicial y rol (dueño, encargado o técnico).
-- Restablezco la contraseña de cualquier usuario.
-- Desactivo un usuario sin borrar lo que registró.
-- No puedo desactivarme a mí mismo si soy el único dueño activo.
+Como dueño, quiero crear usuarios para cada persona del taller, para que cada una tenga su acceso.
+- Creo un encargado con nombre, usuario, contraseña inicial y sus permisos (pedido 32: no hay rol Técnico). Desde el pedido 50 no se crea un dueño desde el panel: lo crea o lo recupera YankoSoft en el servidor.
+- Restablezco la contraseña de un encargado. La mía la cambio con la actual ("Cambiar mi contraseña", pedido 50); la de otro dueño no se cambia desde el panel.
+- Desactivo un encargado sin borrar lo que registró. Un dueño no se desactiva desde el panel: siempre queda uno activo.
 
 ### HU-03 Permisos del encargado
 Como dueño, quiero elegir qué módulos ve el encargado, para darle acceso sin mostrarle todo.
-- Marco o desmarco módulos (clientes, consultas, agenda, órdenes, pagos, mantenimientos, sitio).
-- El encargado nunca puede cotizar (RN-01) ni cambiar la configuración.
+- Marco o desmarco módulos (sitio, reclamos, clientes, cotizaciones, agenda, órdenes, pagos, mantenimientos) y el permiso "autorizar entrega con saldo" (RN-13), de a uno o con un perfil (Taller, Atención, Todo; pedido 32).
+- Con el permiso de Cotizaciones, el encargado cotiza (RN-01, pedido 24). Nunca cambia la configuración, el catálogo ni los usuarios.
 - El permiso se valida en el servidor: entrar por la URL de un módulo no habilitado muestra "sin acceso".
+- Un perfil marca sus casillas de un toque: Taller (agenda y órdenes), Atención (además clientes, cotizaciones, pagos y mantenimientos) o Todo; después se ajustan (pedido 32).
 
 ### HU-04 Datos del negocio
 Como dueño, quiero editar los datos del negocio, para que el sitio y el PDF estén siempre al día.
@@ -99,6 +99,7 @@ Como usuario del panel, quiero instalar el sistema en mi celular, para abrirlo c
 ### HU-07 Servicios del sitio
 Como dueño, quiero crear y editar los servicios que muestra el sitio, para mantenerlo al día.
 - Cada servicio tiene nombre, resumen, descripción, beneficios, pasos del proceso, foto principal y orden.
+- La foto principal es opcional: mientras no se cargue, el sitio muestra una imagen de reemplazo con la marca de TocTar.
 - Puedo ocultar un servicio sin borrarlo.
 - El servicio del sitio es el mismo registro que el del catálogo de la entrega 2 (se le suman precios después).
 
@@ -115,7 +116,7 @@ Como dueño, quiero subir fotos de antes y después, para mostrar el trabajo.
 
 ### HU-10 Portada
 Como visitante, quiero ver de un vistazo qué hace TocTar, para decidir si escribir.
-- Muestra lema, imagen principal, servicios destacados y algunas fotos de la galería.
+- Muestra lema, imagen principal (con el comparador de un trabajo de la galería), servicios destacados y TikTok. Desde el pedido 36, sin miniaturas de la galería: las fotos están en la Galería.
 - El botón principal abre WhatsApp.
 - Carga rápido en el celular (RNF-02).
 
@@ -154,7 +155,7 @@ Como cliente, quiero dejar un reclamo o pedido de garantía, para que TocTar lo 
 - Tiene protección contra envíos automáticos (spam).
 
 ### HU-17 Atender reclamos
-Como dueño, quiero ver los reclamos recibidos, para responderlos a tiempo.
+Como dueño o encargado con el módulo de reclamos, quiero ver los reclamos recibidos, para responderlos a tiempo.
 - Veo la lista con los pendientes primero.
 - Abro uno, veo sus datos y fotos, y lo marco como atendido con una nota.
 - Desde el reclamo puedo abrir WhatsApp con ese cliente.
@@ -171,12 +172,12 @@ Como dueño, quiero que TocTar aparezca al buscar en Tarija, para recibir client
 ### HU-19 Catálogo con variantes
 Como dueño, quiero definir variantes de cada servicio, para cotizar con opciones.
 - Agrego variantes a un servicio (por ejemplo, 1, 2, 3, 5 y 10 años).
-- Marco si el servicio genera recordatorio de mantenimiento.
+- Indico cuál es el mantenimiento del servicio (otro servicio o él mismo) y cada cuántos meses (pedido 21).
 - Desactivo servicios o variantes sin perder el historial.
 
 ### HU-20 Precios por tamaño y duración
 Como dueño, quiero cargar precios por tamaño de vehículo y la duración de cada servicio, para que el sistema me sugiera precios y fechas.
-- Cada variante tiene un precio por tamaño (auto/sedán, camioneta, vagoneta); puede quedar vacío ("según evaluación").
+- Cada variante tiene un precio por tamaño de vehículo (hoy 5 tamaños, de compactos a extra grandes); puede quedar vacío ("según evaluación").
 - Cada servicio o variante tiene duración en días.
 - Cada cambio de precio queda registrado con fecha y usuario.
 
@@ -193,26 +194,25 @@ Como personal, quiero encontrar un cliente rápido, para atenderlo mientras escr
 
 ### HU-23 Ficha del cliente
 Como personal, quiero ver todo lo de un cliente en un lugar, para atenderlo con contexto.
-- Muestra datos, vehículos, consultas, cotizaciones, órdenes, pagos y saldo pendiente.
-- Desde la ficha puedo iniciar una consulta o una reserva directa, o abrir WhatsApp.
+- Muestra datos, vehículos, cotizaciones, órdenes, pagos y saldo pendiente.
+- Desde la ficha puedo iniciar una cotización o una reserva directa, o abrir WhatsApp.
 
-### HU-24 Registrar consulta
-Como personal, quiero registrar cada consulta, para que ninguna se pierda.
-- Registro cliente, vehículo, servicio de interés, canal, fotos o videos y nota (CU-10).
-- Si el cliente o el vehículo no existen, los creo sin salir de la pantalla.
-- La consulta queda en estado "consultó".
+### HU-24 Registrar consulta (reemplazada)
+Desde el pedido 23 (01/11/2026) no hay consulta aparte: el dueño pidió cotizar directo. Lo que hacía esta historia (registrar al cliente y su vehículo sin salir de la pantalla) pasó a HU-25. Especificación: `08-desarrollo/etapas/P23-cotizacion-directa.md`.
 
 ### HU-25 Armar cotización
-Como dueño, quiero armar una cotización con precios sugeridos, para cotizar rápido sin equivocarme.
+Como dueño o encargado con el permiso "Cotizaciones", quiero armar una cotización en una sola pantalla con precios sugeridos, para cotizar rápido sin equivocarme.
+- Elijo al cliente o lo registro ahí mismo, con su vehículo (pedido 23).
 - Agrego servicios y variantes; el precio se sugiere según el tamaño del vehículo y lo puedo cambiar.
 - Agrego descuento; el sistema calcula total y adelanto sugerido.
-- Indico si es un estimado por fotos (RN-03).
-- Solo el dueño ve el botón "Cotizar" y el servidor rechaza a otros roles (RN-01).
+- Indico cómo se cotizó: en persona o por fotos; por fotos es un estimado (RN-03).
+- Defino la validez de la cotización; el sistema sugiere la de la configuración (S-5).
+- Cotizan el dueño y el encargado con el permiso; el servidor rechaza a los demás (RN-01, pedido 24).
 - Modificar una cotización enviada crea una versión nueva; la anterior no cambia (RN-02).
 
 ### HU-26 PDF de la cotización
 Como dueño, quiero un PDF profesional, para entregarlo impreso o por WhatsApp.
-- Lleva logo, datos del negocio, cliente y vehículo, número y fecha, detalle, total, adelanto, validez, formas de pago, condiciones y garantía, y fotos elegidas.
+- Lleva logo, datos del negocio, cliente y vehículo, número y fecha, detalle, total, adelanto, validez, formas de pago, condiciones y garantía (sin fotos desde el pedido 27).
 - Se ve bien impreso en A4 y en la pantalla del celular.
 - El texto de condiciones sale de la configuración.
 
@@ -221,11 +221,11 @@ Como dueño, quiero mandar el PDF desde el celular, para no pasar por la computa
 - En el celular, "Compartir" abre el menú del teléfono con el PDF adjunto (WhatsApp, correo).
 - En la computadora, el PDF se descarga o se imprime.
 
-### HU-28 Seguimiento de consultas
-Como dueño, quiero ver qué consultas siguen abiertas, para recuperar clientes que se enfrían.
-- Lista por estado: consultó, cotizado, confirmado, perdido.
-- Muestra los días desde el último movimiento, de más antiguo a más nuevo.
-- Puedo marcar una consulta como perdida con un motivo (precio, no respondió, otro).
+### HU-28 Seguimiento de cotizaciones
+Como dueño, quiero ver qué cotizaciones esperan respuesta, para recuperar clientes que se enfrían.
+- Lista por estado: pendientes, aceptadas y rechazadas, con búsqueda por cliente, teléfono, placa o número.
+- Muestra los días desde el último movimiento; las pendientes, de más antigua a más nueva, y las que pasan los días de Configuración dicen "Sin respuesta".
+- Puedo rechazar una cotización con un motivo (precio, no respondió, otro) y volverla a pendiente.
 
 ### HU-29 Tablero de la agenda
 Como personal, quiero ver la ocupación del taller por espacio y día, para saber cuándo hay lugar.
@@ -237,7 +237,7 @@ Como personal, quiero ver la ocupación del taller por espacio y día, para sabe
 Como personal, quiero agendar una reserva sin cruces, para dejar de usar el cuaderno.
 - Desde una cotización confirmada o como reserva directa (CU-13).
 - El sistema sugiere la duración y solo deja elegir espacios libres en esos días (RN-06).
-- Asigno técnico (opcional) y registro el adelanto con el monto sugerido editable (RN-04).
+- Registro el adelanto con el monto sugerido editable (RN-04). No se asigna un técnico (pedido 32).
 
 ### HU-31 Reprogramar o cancelar
 Como personal, quiero mover o cancelar una reserva, para reflejar lo que pide el cliente.
@@ -246,19 +246,20 @@ Como personal, quiero mover o cancelar una reserva, para reflejar lo que pide el
 
 ### HU-32 Registrar pagos y saldo
 Como personal, quiero registrar cada pago, para saber cuánto falta cobrar.
-- Registro monto, método (QR, efectivo, transferencia), fecha, tipo (adelanto o saldo) y foto opcional del comprobante.
+- Registro monto, método (QR, efectivo, transferencia), fecha y foto opcional del comprobante; el tipo (adelanto si se paga antes de que llegue el vehículo, saldo después) lo pone el sistema (pedido 46).
 - El saldo de la orden se recalcula al instante.
 - Un pago registrado no se borra; se anula con motivo y queda en el historial.
 
 ### HU-33 Recibir vehículo
 Como personal, quiero registrar el estado del vehículo al ingresar, para evitar reclamos por daños previos.
-- Desde la reserva elijo "Recibir"; tomo fotos con la cámara del celular y anoto observaciones.
+- Desde la reserva elijo "Recibir"; en el checklist marco cada parte "Bien" o con un detalle (qué tiene, una nota y su foto), y "Bien" se vuelve a tocar para desmarcarla; sin revisarlas todas no se recibe (pedidos 12 y 26).
+- Anoto observaciones (lo que no es una parte). Las fotos de inicio y del final se toman en la orden (pedido 27).
 - Se crea la orden en estado "recibido" con el precio cotizado.
 
-### HU-34 Órdenes del técnico
-Como técnico, quiero ver mis trabajos y registrar el avance, para que el dueño sepa cómo va cada vehículo.
-- Veo solo mis órdenes, sin precios ni pagos (RN-12).
-- Cambio el estado (recibido, en proceso, listo), subo fotos de antes, durante y después, y escribo notas.
+### HU-34 Trabajar una orden
+Como personal del taller, quiero ver las órdenes y registrar el avance, para que el dueño sepa cómo va cada vehículo. (Hasta el pedido 32 era "Órdenes del técnico": cada técnico veía solo las suyas.)
+- Con el permiso de Órdenes veo todas las del taller, sin técnico asignado; sin Pagos, sin precios (RN-12, pedido 32).
+- Cambio el estado (recibido, en proceso, listo), subo fotos de inicio y del final (pedido 27) y escribo notas.
 
 ### HU-35 Avisar vehículo listo
 Como personal, quiero avisar al cliente con un toque, para no escribir el mismo mensaje cada vez.
@@ -268,19 +269,21 @@ Como personal, quiero avisar al cliente con un toque, para no escribir el mismo 
 ### HU-36 Entregar vehículo
 Como personal, quiero cerrar la orden al entregar, para que todo quede registrado.
 - Veo precio final, pagos y saldo; el dueño puede sumar servicios adicionales.
-- Con saldo pendiente, solo el dueño puede confirmar la entrega (RN-13).
+- Con saldo pendiente, solo el dueño o un encargado con el permiso "autorizar entrega con saldo" puede confirmar la entrega (RN-13).
 - Si el servicio genera mantenimiento, se calcula la fecha del próximo (RN-08).
+- El cliente firma con el dedo que recibe su vehículo conforme, con su nombre; si no puede firmar, se entrega sin firma con el motivo (pedido 13).
 
 ### HU-37 Saldos pendientes
 Como dueño, quiero ver quién me debe, para cobrarlo.
 - Lista de órdenes entregadas con saldo, con cliente, monto y días.
 - Desde cada una puedo abrir WhatsApp o registrar el pago.
+- Busco por cliente, teléfono o placa y ordeno por la más antigua, el mayor monto o el cliente; el total por cobrar es el de todas (pedido 30).
 
 ### HU-38 Recordatorios de mantenimiento
 Como personal, quiero ver a quién le toca mantenimiento, para traerlos de vuelta al taller.
 - Lista de mantenimientos vencidos y por vencer (próximos 15 días), ordenados por fecha.
 - "Avisar" abre WhatsApp con el mensaje escrito; luego marco avisado, agendado o no interesado.
-- "Agendar" abre una reserva directa del servicio de mantenimiento.
+- "Reservar" abre una reserva directa del servicio de mantenimiento.
 
 ### HU-39 Pantalla del día (deseable)
 Como dueño, quiero ver lo del día al abrir el sistema, para organizarme rápido.

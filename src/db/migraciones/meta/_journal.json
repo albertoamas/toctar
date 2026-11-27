@@ -1,0 +1,433 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1791996814339,
+      "tag": "0000_acceso",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792007291095,
+      "tag": "0001_permisos",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792024658962,
+      "tag": "0002_negocio",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792024659805,
+      "tag": "0003_datos_negocio",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792026415205,
+      "tag": "0004_parametros",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792026416199,
+      "tag": "0005_datos_parametros",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792029646685,
+      "tag": "0006_servicios",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792029647587,
+      "tag": "0007_datos_servicios",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792032520286,
+      "tag": "0008_contenido",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792032521228,
+      "tag": "0009_datos_contenido",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792032782201,
+      "tag": "0010_galeria",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792046810065,
+      "tag": "0011_reclamos",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1792181740319,
+      "tag": "0012_intentos_ingreso",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792182612761,
+      "tag": "0013_archivo_privado",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1792364879651,
+      "tag": "0014_foto_portada",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1792471729742,
+      "tag": "0015_catalogo",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1792471739060,
+      "tag": "0016_datos_catalogo",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1792472971550,
+      "tag": "0017_precios",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1792474068851,
+      "tag": "0018_clientes",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1792474979306,
+      "tag": "0019_busqueda_clientes",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1792531965822,
+      "tag": "0020_consultas",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1792534071470,
+      "tag": "0021_subidas_pendientes",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1792534714982,
+      "tag": "0022_datos_seguimiento",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1792535549103,
+      "tag": "0023_cotizaciones",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1792535550122,
+      "tag": "0024_datos_cotizaciones",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1792585673219,
+      "tag": "0025_datos_documento",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1792590184285,
+      "tag": "0026_trabajos",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1792633977718,
+      "tag": "0027_cotizacion_reagendable",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1792679262376,
+      "tag": "0028_ordenes",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1792765280805,
+      "tag": "0029_orden_fecha_prevista",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1792776579633,
+      "tag": "0030_mantenimientos",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1792864950370,
+      "tag": "0031_galeria_en_portada",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1792870302196,
+      "tag": "0032_servicio_beneficios_con_icono",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1792883254808,
+      "tag": "0033_servicio_foto",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1792957307327,
+      "tag": "0034_plantillas_mensaje",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1792963252228,
+      "tag": "0035_galeria_desde_orden",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1793138038364,
+      "tag": "0036_planes_mantenimiento",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1793138068402,
+      "tag": "0037_sin_intervalo_global",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1793544948074,
+      "tag": "0038_cotizacion_directa",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1793566130793,
+      "tag": "0039_checklist_recepcion",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1793571111596,
+      "tag": "0040_checklist_parte_por_parte",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1793572688816,
+      "tag": "0041_firma_entrega",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1793674441566,
+      "tag": "0042_sin_tecnico_asignado",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1793674645672,
+      "tag": "0043_dos_roles",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1793908533836,
+      "tag": "0044_mapa_google",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1794419646760,
+      "tag": "0045_enlace_cotizacion",
+      "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1794460419297,
+      "tag": "0046_video_de_portada",
+      "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1794588711938,
+      "tag": "0047_datos_privacidad",
+      "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1794626109207,
+      "tag": "0048_archivo_mediana",
+      "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1794792030892,
+      "tag": "0049_duracion_de_una_variante",
+      "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1795061990708,
+      "tag": "0050_marcas_vehiculo",
+      "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1795061996044,
+      "tag": "0051_datos_marcas",
+      "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1795101452305,
+      "tag": "0052_gastos",
+      "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1795146220911,
+      "tag": "0053_sin_hora_de_ingreso",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1795223750918,
+      "tag": "0054_sin_espacios",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1795229902279,
+      "tag": "0055_probador_de_colores",
+      "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1795238537325,
+      "tag": "0056_datos_repintado_de_aros",
+      "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1795297092971,
+      "tag": "0057_cotizacion_rapida",
+      "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1795324338217,
+      "tag": "0058_sin_vehiculo_del_interesado",
+      "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1795324345082,
+      "tag": "0059_placa_del_interesado",
+      "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1795731826053,
+      "tag": "0060_foto_del_vehiculo",
+      "breakpoints": true
+    }
+  ]
+}

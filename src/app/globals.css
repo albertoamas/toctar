@@ -1,26 +1,1494 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* Identidad visual de TocTar: Design System https://claude.ai/artifact/FcABnS1tF3WgZMz9v3e5BT
+   (docs/06-diseno/identidad-visual.md). Los valores de abajo son los de su tokens.json:
+   si cambian allá, se cambian acá. Las variables de shadcn/ui apuntan a los tokens de marca. */
+
+/* Tema oscuro = cualquier elemento dentro de [data-theme="oscuro"] (el sitio público siempre). */
+@custom-variant dark (&:where([data-theme="oscuro"], [data-theme="oscuro"] *));
+/* Pantalla ancha y en horizontal (el ingreso en dos columnas, pulido 3.2): una tableta grande en vertical se ve como el
+   celular, porque en una columna angosta y alta la diagonal de 60° se come la franja. */
+@custom-variant apaisado (@media (min-width: 1024px) and (orientation: landscape));
+/* La barra lateral comprimida (menu-comprimido.tsx): solo ella y lo que tiene adentro, no el menú del celular */
+@custom-variant comprimido (&:where(html[data-menu="comprimido"] [data-menu-lateral], html[data-menu="comprimido"] [data-menu-lateral] *));
 
 @theme inline {
+  --font-sans: var(--font-texto);
+  --font-heading: var(--font-titular);
+  --font-titular: var(--font-titular);
+
+  /* Colores de marca como utilidades: bg-rojo, text-rojo-texto, text-tinta-suave… */
+  --color-fondo: var(--fondo);
+  --color-superficie: var(--superficie);
+  --color-superficie-alta: var(--superficie-alta);
+  --color-tinta: var(--tinta);
+  --color-tinta-suave: var(--tinta-suave);
+  --color-tinta-media: var(--tinta-media);
+  --color-rojo: var(--rojo);
+  --color-rojo-presionado: var(--rojo-presionado);
+  --color-rojo-texto: var(--rojo-texto);
+  --color-sobre-rojo: var(--sobre-rojo);
+  --color-negro: var(--negro);
+  --color-blanco: var(--blanco);
+  --color-exito: var(--exito);
+  --color-aviso: var(--aviso);
+  /* Panel administrativo (pedido 26, etapas/P26-rediseno-panel.md): el fondo gris del área de trabajo y los tonos de las
+     insignias de estado */
+  --color-fondo-panel: var(--fondo-panel);
+  --color-exito-fondo: var(--exito-fondo);
+  --color-aviso-fondo: var(--aviso-fondo);
+  --color-info: var(--info);
+  --color-info-fondo: var(--info-fondo);
+  --color-peligro: var(--peligro);
+  --color-peligro-fondo: var(--peligro-fondo);
+  --color-violeta: var(--violeta);
+  --color-violeta-fondo: var(--violeta-fondo);
+  --color-neutro-fondo: var(--neutro-fondo);
+  /* Los gráficos de Reportes (pedido 16): ingresos y gastos, y cuatro colores para series (validados para daltonismo) */
+  --color-grafico-ingreso: var(--grafico-ingreso);
+  --color-grafico-gasto: var(--grafico-gasto);
+  --color-grafico-1: var(--grafico-1);
+  --color-grafico-2: var(--grafico-2);
+  --color-grafico-3: var(--grafico-3);
+  --color-grafico-4: var(--grafico-4);
+  --color-grafico-guia: var(--grafico-guia);
+  --color-grafico-eje: var(--grafico-eje);
+
+  /* shadcn/ui */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --radius-sm: var(--radius);
+  --radius-md: var(--radius);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 2);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Tema claro: el del panel interno, un panel administrativo estándar (pedido 26): área de trabajo gris, tarjetas blancas
+   con borde suave y sombra, esquinas de 8 px e insignias de color por estado. La marca queda en el sitio y el ingreso. */
+:root {
+  --fondo: #ffffff;
+  --fondo-panel: #f3f4f6;
+  --superficie: #f2f2f2;
+  --superficie-alta: #ffffff;
+  --borde: #e2e5e9;
+  --borde-control: #8a8a8a;
+  --tinta: #1a1a1a;
+  --tinta-media: #3d3d3d; /* Texto que se lee de corrido sobre la tarjeta del sitio (pedido 33) */
+  --tinta-suave: #595959;
+  --rojo: #e30613;
+  --rojo-presionado: #c40511;
+  --blanco-presionado: #d9d9d9; /* El botón blanco (TikTok) al pasar el mouse */
+  --rojo-texto: #c40511;
+  --sobre-rojo: #ffffff;
+  --negro: #000000;
+  --blanco: #ffffff;
+  --foco: #1a1a1a;
+  --exito: #1b6e43;
+  --aviso: #7a4f00;
+  /* Tonos de las insignias: texto y fondo, contraste AA (≥ 4,5:1) entre ellos */
+  --exito-fondo: #e6f4ea;
+  --aviso-fondo: #fdf1e0;
+  --info: #1d4ed8;
+  --info-fondo: #e8effd;
+  --peligro: #b42318;
+  --peligro-fondo: #fdecea;
+  --violeta: #6d28d9;
+  --violeta-fondo: #f1ebfd;
+  --neutro-fondo: #eceef1;
+  /* Gráficos (pedido 16, prototipo aprobado el 16/11): esmeralda para lo que entra y rojo para lo que sale; para series,
+     el orden fijo azul, ámbar, violeta y rosa. Pares revisados con el validador de la skill dataviz (también daltonismo):
+     cada marca lleva su nombre o su número escrito al lado */
+  /* 19/11 (Reportes v2): verde y rojo un paso más separados para daltonismo (ΔE 8,6 contra 7,9; el validador pide 8) */
+  --grafico-ingreso: #15803d;
+  --grafico-gasto: #dc2626;
+  --grafico-1: #2a78d6;
+  --grafico-2: #eda100;
+  --grafico-3: #6250d6;
+  --grafico-4: #e87ba4;
+  /* Un color fijo por servicio, por su lugar en el catálogo (Reportes v2): la paleta categórica de la skill dataviz,
+     validada con los 8 a la vez. Cada barra o porción lleva su nombre y su monto escritos al lado */
+  --grafico-servicio-1: #2a78d6;
+  --grafico-servicio-2: #eb6834;
+  --grafico-servicio-3: #1baf7a;
+  --grafico-servicio-4: #eda100;
+  --grafico-servicio-5: #e87ba4;
+  --grafico-servicio-6: #008300;
+  --grafico-servicio-7: #6250d6;
+  --grafico-servicio-8: #e34948;
+  --grafico-otros: #9ca3af;
+  --grafico-guia: #eceef1;
+  --grafico-eje: #c4c9d0;
+  --elevacion: 0 8px 24px rgba(26, 26, 26, 0.16);
+  --sombra-tarjeta: 0 1px 2px rgb(22 24 29 / 6%), 0 1px 3px rgb(22 24 29 / 4%);
+  --radius: 8px; /* El panel. El sitio y el ingreso, con las esquinas de la marca (ver [data-theme="oscuro"]). */
+}
+
+/* Alias de shadcn/ui. Van también en cada [data-theme] para que se resuelvan con los
+   tokens de ese tema (una variable con var() se resuelve donde se declara). */
+:root,
+[data-theme] {
+  --background: var(--fondo);
+  --foreground: var(--tinta);
+  --card: var(--superficie);
+  --card-foreground: var(--tinta);
+  --popover: var(--superficie-alta);
+  --popover-foreground: var(--tinta);
+  --primary: var(--rojo);
+  --primary-foreground: var(--sobre-rojo);
+  --secondary: var(--superficie);
+  --secondary-foreground: var(--tinta);
+  --muted: var(--superficie);
+  --muted-foreground: var(--tinta-suave);
+  --accent: var(--superficie);
+  --accent-foreground: var(--tinta);
+  --destructive: var(--rojo-texto);
+  --border: var(--borde);
+  --input: var(--borde-control);
+  --ring: var(--foco);
+  --sidebar: var(--superficie);
+  --sidebar-foreground: var(--tinta);
+  --sidebar-primary: var(--rojo);
+  --sidebar-primary-foreground: var(--sobre-rojo);
+  --sidebar-accent: var(--fondo);
+  --sidebar-accent-foreground: var(--tinta);
+  --sidebar-border: var(--borde);
+  --sidebar-ring: var(--foco);
+}
+
+/* Tema oscuro: el sitio público siempre; el panel si la persona lo elige.
+   Va después de los alias para ganarles en --sidebar-accent. */
+[data-theme="oscuro"] {
+  color-scheme: dark;
+  --fondo: #000000;
+  --superficie: #1a1a1a;
+  --superficie-alta: #262626;
+  --borde: #333333;
+  --borde-control: #767676;
+  --tinta: #ffffff;
+  --tinta-media: #d4d4d4;
+  --tinta-suave: #b3b3b3;
+  --rojo-texto: #ff4d57;
+  --foco: #ffffff;
+  --exito: #5cc98f;
+  --aviso: #f2b33d;
+  --elevacion: 0 12px 32px rgba(0, 0, 0, 0.6);
+  --sidebar-accent: var(--superficie-alta);
+  --radius: 2px; /* radio-1 de la marca: el ingreso. El sitio va con esquinas rectas (radio-0). */
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    @apply font-sans;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  /* Las pantallas siempre oscuras (el sitio y el ingreso) marcan su contenedor con data-fondo="oscuro": el fondo del
+     documento también va en negro. Si no, el blanco del body se veía arriba y abajo, al estirar la página, bajo las
+     barras del sistema y alrededor de la barra de gestos (en la app instalada y en el navegador). No es data-theme:
+     ese también lo lleva el menú del celular, que se abre sobre el panel claro. Solo cuenta si está a la vista: Next deja
+     la pantalla anterior oculta (display: none) para volver rápido, y el ingreso quedaba ahí después de entrar al panel. */
+  html:has([data-fondo="oscuro"]:not([style*="display: none"], [style*="display: none"] *)),
+  html:has([data-fondo="oscuro"]:not([style*="display: none"], [style*="display: none"] *)) body {
+    background-color: var(--negro);
+    color-scheme: dark;
+  }
+  /* El panel, con su gris: al estirar la página más allá del final (el rebote del iPhone), se veía el blanco del body
+     (prueba en un iPhone 14, 19/11) */
+  html:has([data-fondo="panel"]:not([style*="display: none"], [style*="display: none"] *)),
+  html:has([data-fondo="panel"]:not([style*="display: none"], [style*="display: none"] *)) body {
+    background-color: var(--fondo-panel);
+  }
+  /* Un fieldset no se achica por debajo del ancho de su contenido (min-inline-size: min-content): en el celular empujaba
+     el formulario fuera de la pantalla cuando algo de adentro medía un poco más (las horas en el Chromium de Linux; lo
+     encontró el CI, 25/10). Así se comporta como cualquier contenedor. */
+  fieldset {
+    min-inline-size: 0;
+  }
+  :focus-visible {
+    outline: 2px solid var(--foco);
+    outline-offset: 2px;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Avisos flotantes (sonner, pulido 1.5). Fuera de capas a propósito: sonner trae su propio CSS sin capa,
+   que le ganaría a cualquier regla dentro de @layer. Cada tipo con su color de tono, de fondo suave y el texto en su
+   tono (prueba en un iPhone 14, 19/11: la tarjeta blanca con un borde de color al costado no se distinguía): verde lo
+   que salió bien, rojo un error, azul una información (la versión nueva del sistema, pedido 39). */
+[data-sonner-toaster] [data-sonner-toast]:is([data-type="success"], [data-type="error"], [data-type="info"]) {
+  gap: 0.625rem;
+  padding: 0.875rem 1rem;
+  border-radius: 0.75rem;
+  border-width: 1px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.35;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.12);
+}
+[data-sonner-toaster] [data-sonner-toast][data-type="success"] {
+  background: var(--exito-fondo);
+  border-color: color-mix(in srgb, var(--exito) 30%, transparent);
+  color: var(--exito);
+}
+[data-sonner-toaster] [data-sonner-toast][data-type="error"] {
+  background: var(--peligro-fondo);
+  border-color: color-mix(in srgb, var(--peligro) 30%, transparent);
+  color: var(--peligro);
+}
+[data-sonner-toaster] [data-sonner-toast][data-type="info"] {
+  background: var(--info-fondo);
+  border-color: color-mix(in srgb, var(--info) 30%, transparent);
+  color: var(--info);
+}
+[data-sonner-toaster] [data-sonner-toast] [data-icon] {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: inherit;
+}
+[data-sonner-toaster] [data-sonner-toast] [data-icon] svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+/* La X para cerrarlo, a la derecha y del alto del aviso (sonner la pone en la esquina de arriba a la izquierda, chica):
+   del tamaño de un dedo. En el celular también se cierra deslizándolo hacia arriba, como una notificación del iPhone. */
+[data-sonner-toaster] [data-sonner-toast]:is([data-type="success"], [data-type="error"], [data-type="info"]) {
+  padding-right: 3rem;
+}
+/* Con [data-styled]: el CSS de sonner, que se carga después, usa el mismo peso y si no le ganaba */
+[data-sonner-toaster] [data-sonner-toast][data-styled="true"] [data-close-button] {
+  left: auto;
+  right: 0.25rem;
+  top: 50%;
+  width: 2.5rem;
+  height: 2.5rem;
+  transform: translateY(-50%);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  opacity: 0.7;
+}
+[data-sonner-toaster] [data-sonner-toast][data-styled="true"] [data-close-button]:hover {
+  background: transparent;
+  opacity: 1;
+}
+[data-sonner-toaster] [data-sonner-toast][data-styled="true"] [data-close-button] svg {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+/* Con una ventana modal abierta en el celular (un modal, una hoja, el menú o "¿Salir sin guardar?"), la página de atrás no
+   se desplaza (19/11, prueba en un iPhone 14). El bloqueo de Base UI está apagado en el celular (dialog.tsx, sheet.tsx y
+   pregunta-salir.tsx): en Safari pasaba el contenido a otro contenedor y al cerrar se veía un parpadeo. Este no mueve
+   nada: solo le quita el desplazamiento a la página mientras dure (Safari lo respeta desde iOS 16; en uno más viejo el
+   fondo se movería, sin parpadear). Se reconoce la ventana por su función (role), así vale también para una nueva. */
+@media (max-width: 639px) {
+  html:has(:is([role="dialog"], [role="alertdialog"])[data-open]) {
+    overflow: hidden;
+  }
+}
+
+/* Recursos gráficos de la marca (componentes del Design System). */
+@layer components {
+  /* Línea LED roja del frente del taller. Solo sobre fondo oscuro. Lisa, sin brillo: el resplandor se veía neón
+     (revisión de YankoSoft en el pulido 3.1; en el encabezado ya se había quitado en 1.1). */
+  .tt-led {
+    display: block;
+    height: 3px;
+    border: 0;
+    margin: 0;
+    background: var(--rojo);
+    transform-origin: left center;
+  }
+  /* La foto del taller de la portada entra sin aparecer de golpe, y el lema sube apenas al llegar: el único momento con
+     movimiento de la portada, además del comparador (pulido 13.53). Sube sin empezar invisible: es lo que Chrome mide
+     como la carga de la página (LCP), y un lema transparente la demoraría. */
+  .tt-portada-foto {
+    animation: tt-aparecer 600ms ease-out both;
+  }
+  .tt-portada-lema {
+    animation: tt-subir 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .tt-portada-foto,
+    .tt-portada-lema {
+      animation: none;
+    }
+  }
+
+  /* En el celular, el pie fijo de un formulario (PieFormulario): un campo al que se llega con el teclado no queda tapado
+     por él, y los avisos se ponen encima (sonner.tsx), así no tapan su botón. Con un modal abierto, los avisos van arriba.
+     Esta medida vale hasta que carga JavaScript: después, el pie dice cuánto ocupa desde abajo (pie-formulario.tsx) */
+  @media (max-width: 639px) {
+    html:has([data-pie-movil]) {
+      scroll-padding-bottom: 5rem;
+      --alto-pie-movil: 5.5rem;
+    }
+  }
+
+  /* La franja de la marca del ingreso (pulido 3.2): superficie gris con un borde cortado a 60°, el único ángulo de la
+     identidad. En el celular, el borde de abajo (28 px de alto por 16,17 de ancho: tan 60° = 1,732). En la computadora,
+     el borde derecho, a lo alto de la pantalla: un fondo inclinado con skew de 30° (un lado a 60°), así el ángulo no
+     cambia con la altura, que un recorte en porcentajes no puede seguir. Solo en horizontal: ver la variante apaisado. */
+  .tt-franja-ingreso {
+    position: relative;
+    isolation: isolate;
+    background: var(--superficie);
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 28px), calc(100% - 16.17px) 100%, 0 100%);
+  }
+  @media (min-width: 1024px) and (orientation: landscape) {
+    .tt-franja-ingreso {
+      background: none;
+      clip-path: none;
+      overflow: hidden;
+    }
+    .tt-franja-ingreso::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 0 -50%;
+      z-index: -1;
+      background: var(--superficie);
+      transform: skewX(-30deg);
+      transform-origin: top right;
+    }
+  }
+
+  /* Página actual en la barra del sitio: una barra roja sobre la línea gris del encabezado, bajo el enlace.
+     Los extremos van a 60° (skew de 30°), el ángulo de la marca. Baja 1 px para tapar la línea gris. */
+  .tt-enlace-actual::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    bottom: -1px;
+    left: 0;
+    z-index: 1;
+    height: 3px;
+    background: var(--rojo);
+    transform: skewX(-30deg);
+  }
+
+  /* Módulo actual en el menú del panel (pedido 26): una barra roja recta en el borde izquierdo del enlace (dentro: el
+     menú se desplaza y recortaría lo que sale). Con su ícono en rojo, es lo único rojo del menú. */
+  .tt-modulo-actual::before {
+    content: "";
+    position: absolute;
+    top: 8px;
+    bottom: 8px;
+    left: 0;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: var(--rojo);
+  }
+
+  /* Siluetas de carga del panel (Cargando): aparecen recién a los 0,3 s, para que una carga rápida no parpadee. */
+  .tt-cargando {
+    animation: tt-aparecer 150ms ease-out 300ms both;
+  }
+  .tt-cargando__bloque {
+    border-radius: var(--radius-sm, 4px);
+    /* Se ve sobre el gris del panel y sobre una tarjeta blanca */
+    background: color-mix(in srgb, var(--tinta) 8%, transparent);
+    animation: tt-latido 1.4s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .tt-cargando__bloque {
+      animation: none;
+    }
+  }
+
+  /* Área táctil de 44 px de alto para enlaces de texto sueltos, sin cambiar el diseño: una capa invisible
+     centrada en el enlace recibe el toque. Para listas de enlaces, mejor una fila de 44 px (min-h-11). */
+  .tt-area-toque {
+    position: relative;
+  }
+  .tt-area-toque::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: 0;
+    left: 0;
+    height: 44px;
+    transform: translateY(-50%);
+  }
+
+  /* El lema entre guiones cortos, como en el logo. */
+  .tt-lema {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font-size: 12px;
+    line-height: 16px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .tt-lema::before,
+  .tt-lema::after {
+    content: "";
+    width: 10px;
+    height: 2px;
+    background: currentColor;
+  }
+
+  /* Insignia de estado del panel (pedido 26): una píldora con punto, con el fondo del tono. La palabra lleva el
+     significado; el color lo refuerza. Sin tono, gris. La usa el componente Insignia. */
+  /* Los tonos de estado, en un solo lugar: cada clase da su color (--tono) y su fondo (--tono-fondo). Los usan la
+     insignia y los bloques de la agenda (tablero.tsx). Sin tono, gris. */
+  .tt-estado,
+  .tt-tono-neutro {
+    --tono: var(--tinta-suave);
+    --tono-fondo: var(--neutro-fondo);
+  }
+  .tt-estado--exito,
+  .tt-tono-exito {
+    --tono: var(--exito);
+    --tono-fondo: var(--exito-fondo);
+  }
+  .tt-estado--aviso,
+  .tt-tono-aviso {
+    --tono: var(--aviso);
+    --tono-fondo: var(--aviso-fondo);
+  }
+  .tt-estado--peligro,
+  .tt-tono-peligro {
+    --tono: var(--peligro);
+    --tono-fondo: var(--peligro-fondo);
+  }
+  .tt-estado--info,
+  .tt-tono-info {
+    --tono: var(--info);
+    --tono-fondo: var(--info-fondo);
+  }
+  .tt-estado--violeta,
+  .tt-tono-violeta {
+    --tono: var(--violeta);
+    --tono-fondo: var(--violeta-fondo);
+  }
+  .tt-estado {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 9px;
+    border-radius: 9999px;
+    background: var(--tono-fondo);
+    color: var(--tono);
+    font-size: 12.5px;
+    line-height: 18px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .tt-estado::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    background: currentColor;
+  }
+  /* Una alerta (Alerta, 23/11): el ícono va en lugar del punto */
+  .tt-estado--icono::before {
+    display: none;
+  }
+
+  /* Una parte de un formulario largo, como tarjeta (SeccionFormulario, pedido 26). La leyenda de un fieldset se dibuja
+     sobre su borde: flotando deja de serlo y pasa a ser un elemento más de la columna, dentro de la tarjeta. */
+  /* La tarjeta blanca sobre el fondo gris del panel (pedido 26): cada bloque se separa solo. Una sola definición para
+     la tarjeta suelta, la parte de un formulario largo y el formulario de una sola parte (tt-formulario-panel), que
+     además llevan su relleno. En componentes y no como utilidad: así p-4, rounded-lg y las demás la ajustan. */
+  .tt-tarjeta-panel,
+  .tt-seccion-formulario,
+  .tt-formulario-panel {
+    border: 1px solid var(--borde);
+    border-radius: var(--radius);
+    background: var(--fondo);
+    box-shadow: var(--sombra-tarjeta);
+  }
+  .tt-seccion-formulario,
+  .tt-formulario-panel {
+    padding: 1rem;
+  }
+  /* La leyenda flota para quedar adentro de la tarjeta y no sobre el borde. Nunca con el fieldset en flex o grid:
+     Safari no deja flotar adentro y la vuelve a poner en el borde (por eso el flex va en un div, SeccionFormulario) */
+  .tt-seccion-formulario > legend {
+    float: left;
+    width: 100%;
+  }
+  .tt-seccion-formulario > legend + * {
+    clear: both;
+  }
+  @media (width >= 40rem) {
+    .tt-seccion-formulario,
+    .tt-formulario-panel {
+      padding: 1.25rem;
+    }
+  }
+
+  /* Botones del sitio (componente Boton del Design System). El principal es rojo con la esquina
+     inferior derecha cortada a 60°; el corte va en una capa de fondo para que el anillo de foco no se recorte.
+     Un solo principal por pantalla: en el sitio es siempre la acción de WhatsApp. */
+  .tt-boton {
+    --tt-relleno: transparent;
+    position: relative;
+    isolation: isolate;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 12px 24px;
+    color: var(--tinta);
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .tt-boton::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: var(--tt-relleno);
+  }
+  .tt-boton svg {
+    width: 20px;
+    height: 20px;
+    flex: none;
+  }
+  /* Los dos botones de color: el principal (rojo, WhatsApp) y TikTok (blanco, pedido 35: casi tan importante como
+     WhatsApp, pero sin robarle el rojo, que es de la acción principal). El mismo corte a 60° y el mismo relleno */
+  .tt-boton--principal,
+  .tt-boton--blanco {
+    padding-right: 28px;
+  }
+  .tt-boton--principal {
+    --tt-relleno: var(--rojo);
+    color: var(--sobre-rojo);
+  }
+  .tt-boton--blanco {
+    --tt-relleno: var(--blanco);
+    color: var(--negro);
+  }
+  /* El corte a 60° (14 px de alto, 8 de ancho) se pinta con un degradado anclado a la esquina, no con clip-path:
+     un recorte no se alinea a los píxeles de la pantalla y deja los bordes rectos difusos (se notaba al 100 % y al 125 %).
+     119.74deg es la perpendicular al corte; 6,95 px es la distancia del corte a la esquina; 1 px de transición lo suaviza. */
+  .tt-boton--principal::before,
+  .tt-boton--blanco::before {
+    background: linear-gradient(119.74deg, var(--tt-relleno) calc(100% - 7.45px), transparent calc(100% - 6.45px));
+  }
+  .tt-boton--principal:hover {
+    --tt-relleno: var(--rojo-presionado);
+  }
+  .tt-boton--blanco:hover {
+    --tt-relleno: var(--blanco-presionado);
+  }
+  .tt-boton--contorno {
+    box-shadow: inset 0 0 0 1px var(--borde-control);
+  }
+  .tt-boton--contorno:hover {
+    --tt-relleno: var(--superficie);
+  }
+  /* Botón fijo de WhatsApp (componente BotonWhatsApp): rojo de marca, no verde. */
+  .tt-whatsapp {
+    display: inline-grid;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 9999px;
+    background: var(--rojo);
+    color: var(--sobre-rojo);
+    /* Borde negro fino: se distingue sobre fotos y fondos rojos, sin la sombra gris genérica. */
+    box-shadow: 0 0 0 2px var(--negro);
+  }
+  .tt-whatsapp svg {
+    width: 28px;
+    height: 28px;
+  }
+  .tt-whatsapp:hover {
+    background: var(--rojo-presionado);
+  }
+  /* Botón fijo (whatsapp-flotante.tsx): el contenedor va fijo abajo a la derecha, con la nubecita a la izquierda. */
+  .tt-whatsapp-fijo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    /* El hueco entre la nubecita y el botón no tapa la página: solo sus hijos reciben toques */
+    pointer-events: none;
+    position: fixed;
+    right: calc(16px + env(safe-area-inset-right, 0px));
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    z-index: 40;
+    /* Escondido hasta saber si el botón principal está a la vista (whatsapp-flotante.tsx).
+       visibility lo saca también del teclado y de los lectores de pantalla mientras no se ve. */
+    visibility: hidden;
+    opacity: 0;
+    transform: translateY(8px) scale(0.9);
+    transform-origin: bottom right;
+    transition:
+      opacity 180ms ease-out,
+      transform 180ms ease-out,
+      visibility 0s linear 180ms;
+  }
+  .tt-whatsapp-fijo[data-visible="true"] {
+    visibility: visible;
+    opacity: 1;
+    transform: none;
+    transition:
+      opacity 180ms ease-out,
+      transform 180ms ease-out,
+      visibility 0s;
+  }
+  .tt-whatsapp-fijo > * {
+    pointer-events: auto;
+  }
+  /* El saltito: una sola vez, cuando sale la nubecita. */
+  .tt-whatsapp-fijo[data-nube="true"] .tt-whatsapp {
+    animation: tt-saltito 700ms ease-out 1;
+  }
+
+  /* La nubecita: blanca sobre el sitio oscuro, esquinas rectas como la marca y la punta en un triángulo de 60°
+     (equilátero) que apunta al botón. */
+  .tt-nube {
+    position: relative;
+    background: var(--blanco);
+    box-shadow: 0 0 0 2px var(--negro);
+    animation: tt-nube-entrar 220ms ease-out 1;
+  }
+  .tt-nube__enlace {
+    display: block;
+    padding: 10px 14px;
+    /* En un renglón: una pregunta corta (unos 190 px), entra junto al botón aun a 320 px */
+    white-space: nowrap;
+    color: var(--negro);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+  }
+  .tt-nube__enlace:hover {
+    text-decoration: underline;
+  }
+  .tt-nube__enlace:focus-visible {
+    outline-color: var(--negro);
+    outline-offset: -4px;
+  }
+  .tt-nube::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: -9px;
+    width: 9px;
+    height: 10.4px;
+    translate: 0 -50%;
+    background: var(--blanco);
+    clip-path: polygon(0 0, 100% 50%, 0 100%);
+  }
+  /* Cerrar: un círculo negro sobre la esquina de la nubecita; el área que se toca mide 44 px. */
+  .tt-nube__cerrar {
+    position: absolute;
+    top: -12px;
+    left: -12px;
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 9999px;
+    background: var(--negro);
+    color: var(--blanco);
+    box-shadow: 0 0 0 2px var(--blanco);
+  }
+  .tt-nube__cerrar::before {
+    content: "";
+    position: absolute;
+    inset: -9px;
+  }
+  .tt-nube__cerrar svg {
+    width: 14px;
+    height: 14px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .tt-whatsapp-fijo,
+    .tt-whatsapp-fijo[data-visible="true"] {
+      transform: none;
+      transition: none;
+    }
+    .tt-whatsapp-fijo[data-nube="true"] .tt-whatsapp,
+    .tt-nube {
+      animation: none;
+    }
+  }
+
+  /* Opciones en escalera (página de un servicio, pedido de la demo del 24/10): cada opción lleva una capa blanca sobre
+     la base gris del vehículo, más gruesa cuanto más alta la opción. --paso va de 0 (la primera) a 1 (la última).
+     En el celular, una barra que se alarga; desde 768 px, columnas cuya capa sube. */
+  .tt-escalon {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .tt-escalon__capa {
+    display: block;
+    height: 12px;
+    background: linear-gradient(to right, var(--blanco) calc(12% + 88% * var(--paso)), var(--superficie) 0);
+  }
+  @media (min-width: 768px) {
+    .tt-escalon__capa {
+      height: calc(22px + 48px * var(--paso));
+      background: linear-gradient(to top, var(--superficie) 16px, var(--blanco) 0);
+    }
+  }
+
+  /* Tarjeta de servicio (componente TarjetaServicio): esquina inferior derecha cortada a 60°, sin sombra ni radio.
+     Pedido 33 (03/11): se veía apagada (gris muy oscuro sobre negro, el rojo solo en el enlace). Un gris un poco más
+     claro y una línea arriba la despegan del fondo; una franja roja con punta a 60° entre la foto y el texto; la foto
+     con un poco más de brillo; el texto más claro. Sin brillos ni degradados de color. */
+  .tt-tarjeta,
+  .tt-trabajo {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    color: var(--tinta);
+    /* Corte a 60° de 28 × 16 px pintado con un degradado (ver .tt-boton--principal): 13,89 px del corte a la esquina.
+       Con un degradado y no con clip-path: un clip-path recortaría también el marco del foco del teclado. */
+    background: linear-gradient(119.74deg, var(--superficie-alta) calc(100% - 14.39px), transparent calc(100% - 13.39px));
+    /* La línea de arriba, como borde: una sombra interior quedaba debajo de la foto */
+    border-top: 1px solid var(--borde);
+  }
+  .tt-tarjeta__media {
+    position: relative;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    background: var(--fondo);
+  }
+  .tt-tarjeta__media img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    /* Solo en la tarjeta: la foto original no cambia */
+    filter: brightness(1.1) contrast(1.06) saturate(1.12);
+    transition: transform 400ms ease;
+  }
+  /* La franja roja entre la foto y el texto, con la punta cortada a 60° (el ángulo de la marca). Encima del comparador de
+     la galería y sin tapar sus toques */
+  .tt-tarjeta__media::after,
+  .tt-trabajo__media::after {
+    content: "";
+    position: absolute;
+    z-index: 2;
+    left: 0;
+    bottom: 0;
+    pointer-events: none;
+    width: 76px;
+    height: 5px;
+    /* La punta, con un degradado anclado a la esquina como el corte de la tarjeta (un clip-path deja el borde difuso,
+       identidad-visual.md): a 60°, 3 px de corrida en 5 px de alto */
+    background: linear-gradient(119.74deg, var(--rojo) calc(100% - 3.1px), transparent calc(100% - 2.1px));
+    transition: width 400ms ease;
+  }
+  /* Servicio sin foto todavía: monograma en una tinta y una banda roja a 60° (decisión del 14/10). */
+  .tt-reemplazo {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    background: var(--fondo);
+  }
+  .tt-reemplazo svg {
+    width: 46%;
+    height: auto;
+    fill: var(--borde);
+  }
+  .tt-reemplazo::after {
+    content: "";
+    position: absolute;
+    right: 18%;
+    bottom: 0;
+    width: 18px;
+    height: 38%;
+    background: var(--rojo);
+    transform: skewX(-30deg);
+    transform-origin: bottom;
+  }
+  /* El resumen ocupa el espacio que sobra: "Ver el servicio" queda al pie, a la misma altura en toda la fila aunque
+     los resúmenes tengan distinto largo (revisión de YankoSoft, 24/10) */
+  .tt-tarjeta__cuerpo {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: 10px;
+    padding: 24px 24px 28px;
+  }
+  .tt-tarjeta__titulo {
+    margin: 0;
+    font-family: var(--font-titular);
+    font-size: 30px;
+    line-height: 34px;
+    font-weight: 700;
+    font-style: italic;
+  }
+  .tt-tarjeta__resumen {
+    margin: 0;
+    font-size: 15px;
+    line-height: 24px;
+    color: var(--tinta-media);
+  }
+  .tt-tarjeta__enlace {
+    justify-self: start;
+    margin-top: 6px;
+    color: var(--rojo-texto);
+    font-size: 15px;
+    line-height: 22px;
+    font-weight: 700;
+    text-decoration: none;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 6px;
+  }
+  .tt-tarjeta__enlace:hover {
+    text-decoration: underline;
+  }
+  /* Con el mouse o con el teclado: la franja cruza la tarjeta, la foto se acerca apenas y el enlace se subraya. En el
+     celular (sin mouse) no hay nada que esperar: la franja ya va más larga */
+  .tt-tarjeta:has(.tt-tarjeta__enlace:focus-visible) .tt-tarjeta__media img {
+    transform: scale(1.04);
+  }
+  .tt-tarjeta:has(.tt-tarjeta__enlace:focus-visible) .tt-tarjeta__media::after,
+  .tt-trabajo:has(.tt-trabajo__enlace:focus-visible) .tt-trabajo__media::after {
+    width: 100%;
+  }
+  .tt-tarjeta__enlace:focus-visible {
+    text-decoration: underline;
+  }
+  @media (hover: hover) {
+    .tt-tarjeta:hover .tt-tarjeta__media img {
+      transform: scale(1.04);
+    }
+    .tt-tarjeta:hover .tt-tarjeta__media::after,
+    .tt-trabajo:hover .tt-trabajo__media::after {
+      width: 100%;
+    }
+    .tt-trabajo:hover .tt-trabajo__foto img {
+      transform: scale(1.04);
+    }
+    .tt-trabajo:hover .tt-trabajo__enlace {
+      text-decoration: underline;
+    }
+    .tt-tarjeta:hover .tt-tarjeta__enlace {
+      text-decoration: underline;
+    }
+  }
+  @media (hover: none) {
+    .tt-tarjeta__media::after,
+    .tt-trabajo__media::after {
+      width: 112px;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .tt-tarjeta__media img,
+    .tt-tarjeta__media::after,
+    .tt-trabajo__foto img,
+    .tt-trabajo__media::after {
+      transition: none;
+    }
+    .tt-tarjeta:hover .tt-tarjeta__media img,
+    .tt-tarjeta:has(.tt-tarjeta__enlace:focus-visible) .tt-tarjeta__media img,
+    .tt-trabajo:hover .tt-trabajo__foto img,
+    .tt-trabajo:has(.tt-trabajo__enlace:focus-visible) .tt-trabajo__foto img {
+      transform: none;
+    }
+  }
+
+  /* Un trabajo de la galería (pedido 34): la misma tarjeta que un servicio, con el comparador o la foto arriba y, debajo,
+     su servicio y "Ver el servicio" al pie (a la misma altura en toda la fila). No es un enlace entero: en un antes y
+     después, el toque es para la línea. */
+  .tt-trabajo {
+    position: relative;
+    margin: 0;
+  }
+  .tt-trabajo__media {
+    position: relative;
+  }
+  .tt-trabajo__foto {
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    background: var(--superficie);
+  }
+  /* Solo en la tarjeta, como en las de servicios: la foto original no cambia. También las del antes y después, así las dos
+     secciones se ven de la misma familia */
+  .tt-trabajo__media img {
+    filter: brightness(1.1) contrast(1.06) saturate(1.12);
+  }
+  .tt-trabajo__foto img {
+    transition: transform 400ms ease;
+  }
+  .tt-trabajo__cuerpo {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    gap: 4px;
+    padding: 16px 20px 20px;
+  }
+  .tt-trabajo__titulo {
+    font-family: var(--font-titular);
+    font-size: 24px;
+    line-height: 28px;
+    font-weight: 700;
+    font-style: italic;
+  }
+  .tt-trabajo__enlace {
+    align-self: end;
+    justify-self: start;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--rojo-texto);
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 6px;
+  }
+  .tt-trabajo__enlace:hover,
+  .tt-trabajo__enlace:focus-visible {
+    text-decoration: underline;
+    outline: none;
+  }
+  .tt-trabajo:has(.tt-trabajo__enlace:focus-visible) {
+    outline: 2px solid var(--foco);
+    outline-offset: 2px;
+  }
+  .tt-trabajo:has(.tt-trabajo__enlace:focus-visible) .tt-trabajo__foto img {
+    transform: scale(1.04);
+  }
+  /* Con el teclado se enmarca toda la tarjeta, que es lo que se abre, y no solo el enlace (pulido 2.2). */
+  .tt-tarjeta:has(.tt-tarjeta__enlace:focus-visible) {
+    outline: 2px solid var(--foco);
+    outline-offset: 2px;
+  }
+  .tt-tarjeta__enlace:focus-visible {
+    outline: none;
+  }
+  /* Toda la tarjeta se toca: el enlace la cubre (la tarjeta tiene un solo destino). */
+  .tt-tarjeta__enlace::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+  }
+  .tt-tarjeta {
+    position: relative;
+  }
+  /* La lista de Servicios y "Otros servicios" (pulido de Servicios, 21/11): la foto entera con el nombre encima, sobre un
+     degradado oscuro (en una caja gris, la foto chica no lucía). La flecha de la esquina es el enlace, que cubre toda la
+     tarjeta; la franja roja a 60° queda abajo a la izquierda. Pisa la fila del celular de la tarjeta de siempre. */
+  .tt-tarjeta.tt-tarjeta--foto {
+    display: block;
+    position: relative;
+    /* Arriba y no estirada: en Safari, estirar a lo alto de la celda le gana a la proporción y la tarjeta quedaba en 0 px
+       (pulido 13.54). La principal de la lista, en la computadora, sí llena sus dos filas */
+    align-self: start;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    background: var(--fondo);
+    border-top: 0;
+  }
+  .tt-tarjeta--foto::before {
+    display: none;
+  }
+  .tt-tarjeta--foto .tt-tarjeta__media {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    aspect-ratio: auto;
+  }
+  .tt-tarjeta--foto .tt-tarjeta__media::after {
+    display: block;
+  }
+  .tt-tarjeta--foto .tt-tarjeta__cuerpo {
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 72px 72px 22px 22px;
+    background: linear-gradient(to top, rgb(0 0 0 / 0.9), rgb(0 0 0 / 0.6) 55%, transparent);
+  }
+  .tt-tarjeta--foto .tt-tarjeta__titulo {
+    font-size: 28px;
+    line-height: 31px;
+    text-wrap: balance;
+  }
+  /* Solo la principal lleva su resumen: en las chicas, el nombre basta */
+  .tt-tarjeta--foto .tt-tarjeta__resumen {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .tt-tarjeta--principal .tt-tarjeta__resumen {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+    white-space: normal;
+    max-width: 46ch;
+    color: var(--tinta-media);
+  }
+  /* El enlace no se ve: él mismo cubre la tarjeta, encima del cuerpo (con un ::after, quedaba de 0 × 0 y no se podía
+     tocar). La flecha de la esquina es solo un dibujo */
+  .tt-tarjeta--foto .tt-tarjeta__enlace {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    margin: 0;
+    /* El enlace de siempre va a la izquierda (justify-self: start): en uno con posición absoluta, eso lo encoge a su
+       contenido, que está vacío */
+    justify-self: stretch;
+  }
+  .tt-tarjeta--foto .tt-tarjeta__enlace::after {
+    content: none;
+  }
+  .tt-tarjeta__flecha {
+    position: absolute;
+    right: 18px;
+    bottom: 18px;
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    color: var(--tinta);
+    border: 1px solid rgb(255 255 255 / 0.35);
+    transition:
+      background-color 200ms ease,
+      border-color 200ms ease;
+  }
+  @media (hover: hover) {
+    .tt-tarjeta--foto:hover .tt-tarjeta__flecha {
+      background: var(--rojo);
+      border-color: var(--rojo);
+    }
+  }
+  .tt-tarjeta--foto:has(.tt-tarjeta__enlace:focus-visible) .tt-tarjeta__flecha {
+    background: var(--rojo);
+    border-color: var(--rojo);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .tt-tarjeta__flecha {
+      transition: none;
+    }
+  }
+  /* La grilla: en el celular, dos columnas de fotos cuadradas y la principal a lo ancho; desde la tableta, la principal
+     ocupa dos columnas; en la computadora, dos columnas y dos filas, con dos servicios a su lado */
+  .tt-servicios-lista {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .tt-servicios-lista > li {
+    display: grid;
+  }
+  .tt-servicios-lista > li:first-child {
+    grid-column: span 2;
+  }
+  .tt-servicios-otros {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .tt-servicios-otros > li {
+    display: grid;
+  }
+  /* En el celular, el tercero no entra en las dos columnas: se queda en dos */
+  @media (width < 64rem) {
+    .tt-servicios-otros > li:nth-child(3) {
+      display: none;
+    }
+  }
+  @media (width >= 64rem) {
+    .tt-servicios-otros {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 20px;
+    }
+  }
+  @media (width < 40rem) {
+    .tt-servicios-otros .tt-tarjeta--foto .tt-tarjeta__cuerpo,
+    .tt-servicios-lista .tt-tarjeta--foto:not(.tt-tarjeta--principal) .tt-tarjeta__cuerpo {
+      padding: 48px 12px 14px;
+    }
+    .tt-servicios-otros .tt-tarjeta--foto .tt-tarjeta__titulo {
+      font-size: 19px;
+      line-height: 21px;
+    }
+    .tt-servicios-otros .tt-tarjeta--foto,
+    .tt-servicios-lista .tt-tarjeta--foto:not(.tt-tarjeta--principal) {
+      aspect-ratio: 1 / 1;
+    }
+    .tt-servicios-otros .tt-tarjeta--foto .tt-tarjeta__flecha {
+      display: none;
+    }
+  }
+  @media (width < 40rem) {
+    .tt-servicios-lista .tt-tarjeta--foto:not(.tt-tarjeta--principal) {
+      aspect-ratio: 1 / 1;
+    }
+    .tt-servicios-lista .tt-tarjeta--foto:not(.tt-tarjeta--principal) .tt-tarjeta__cuerpo {
+      padding: 48px 12px 14px;
+    }
+    .tt-servicios-lista .tt-tarjeta--foto:not(.tt-tarjeta--principal) .tt-tarjeta__titulo {
+      font-size: 19px;
+      line-height: 21px;
+    }
+    /* En las chicas del celular, sin la flecha: la tarjeta entera se toca y la flecha tapaba el nombre */
+    .tt-servicios-lista .tt-tarjeta--foto:not(.tt-tarjeta--principal) .tt-tarjeta__flecha {
+      display: none;
+    }
+    .tt-tarjeta--principal .tt-tarjeta__titulo {
+      font-size: 26px;
+      line-height: 29px;
+    }
+    /* En el celular, la principal tampoco lleva el resumen: tapaba media foto */
+    .tt-tarjeta--principal .tt-tarjeta__resumen {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+  }
+  @media (width >= 40rem) {
+    .tt-servicios-lista {
+      gap: 16px;
+    }
+  }
+  @media (width >= 64rem) {
+    .tt-servicios-lista {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 20px;
+    }
+    .tt-servicios-lista > li:first-child {
+      grid-row: span 2;
+    }
+    /* La principal llena sus dos filas: el alto lo ponen las de al lado */
+    .tt-servicios-lista > li:first-child .tt-tarjeta--foto {
+      align-self: stretch;
+      aspect-ratio: auto;
+      height: 100%;
+    }
+    .tt-tarjeta--principal .tt-tarjeta__cuerpo {
+      padding: 120px 88px 32px 32px;
+      gap: 10px;
+    }
+    .tt-tarjeta--principal .tt-tarjeta__titulo {
+      font-size: 44px;
+      line-height: 46px;
+    }
+  }
+
+  /* El divisor entre secciones de la página de un servicio (pulido de Servicios, 21/11): una línea fina arriba y, al
+     inicio, el tramo rojo con la punta a 60° de las tarjetas. Sin él, en un monitor ancho y oscuro las secciones flotaban */
+  .tt-divisor {
+    position: relative;
+    border-top: 1px solid var(--borde);
+    padding-top: 32px;
+  }
+  .tt-divisor::before {
+    content: "";
+    position: absolute;
+    top: -3px;
+    left: 0;
+    width: 76px;
+    height: 5px;
+    background: linear-gradient(119.74deg, var(--rojo) calc(100% - 3.1px), transparent calc(100% - 2.1px));
+  }
+  @media (width >= 48rem) {
+    .tt-divisor {
+      padding-top: 48px;
+    }
+  }
+
+  /* Los servicios de la portada (pulido 13.53). En el celular, los seis del mismo tamaño en dos columnas, con su foto y su
+     nombre (en filas eran casi tres pantallas); desde la tableta, cuatro columnas y los dos primeros ocupan dos cada uno,
+     más grandes y con su resumen. La lista de Servicios no cambia: sigue en filas en el celular. */
+  .tt-servicios-portada {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  @media (width >= 48rem) {
+    .tt-servicios-portada {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 20px;
+    }
+    .tt-servicios-portada > li:nth-child(-n + 2) {
+      grid-column: span 2;
+    }
+  }
+  /* En el celular, las de la portada, todas iguales: cuadradas, con su nombre y sin resumen ni flecha (como las chicas
+     de la lista) */
+  @media (width < 48rem) {
+    .tt-servicios-portada .tt-tarjeta--foto {
+      aspect-ratio: 1 / 1;
+    }
+    .tt-servicios-portada .tt-tarjeta--foto .tt-tarjeta__cuerpo {
+      padding: 48px 12px 14px;
+    }
+    .tt-servicios-portada .tt-tarjeta--foto .tt-tarjeta__titulo {
+      font-size: 19px;
+      line-height: 21px;
+    }
+    .tt-servicios-portada .tt-tarjeta--foto .tt-tarjeta__resumen {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+    .tt-servicios-portada .tt-tarjeta--foto .tt-tarjeta__flecha {
+      display: none;
+    }
+  }
+  /* Desde la tableta, las dos destacadas con su resumen y un título más grande */
+  @media (width >= 48rem) {
+    .tt-servicios-portada .tt-tarjeta--principal .tt-tarjeta__cuerpo {
+      padding: 96px 80px 26px 26px;
+      gap: 8px;
+    }
+    .tt-servicios-portada .tt-tarjeta--principal .tt-tarjeta__titulo {
+      font-size: 36px;
+      line-height: 38px;
+    }
+  }
+
+  /* "Mira cómo trabajamos" (pedido 48): el video que sube el dueño, vertical como en TikTok, sin marco de celular
+     (revisión del 12/11). Con la franja roja abajo a la izquierda, como la foto de una tarjeta. Sin video, no hay nada. */
+  .tt-video-tiktok {
+    position: relative;
+    display: block;
+    width: min(17.5rem, 72vw);
+    aspect-ratio: 9 / 16;
+    overflow: hidden;
+    background: var(--superficie);
+  }
+  .tt-video-tiktok::before {
+    content: "";
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(to bottom, transparent 60%, rgb(0 0 0 / 0.75));
+  }
+  .tt-video-tiktok::after {
+    content: "";
+    position: absolute;
+    z-index: 2;
+    left: 0;
+    bottom: 0;
+    width: 76px;
+    height: 5px;
+    background: linear-gradient(119.74deg, var(--rojo) calc(100% - 3.1px), transparent calc(100% - 2.1px));
+  }
+  .tt-video-tiktok__reproducir {
+    position: absolute;
+    z-index: 2;
+    top: 50%;
+    left: 50%;
+    display: grid;
+    place-items: center;
+    width: 64px;
+    height: 64px;
+    margin: -32px 0 0 -32px;
+    border-radius: 9999px;
+    border: 2px solid var(--blanco);
+    background: rgb(0 0 0 / 0.55);
+    color: var(--blanco);
+  }
+  .tt-video-tiktok__reproducir svg {
+    width: 26px;
+    height: 26px;
+    margin-left: 3px;
+  }
+  .tt-video-tiktok__pie {
+    position: absolute;
+    z-index: 2;
+    left: 16px;
+    right: 16px;
+    bottom: 18px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--blanco);
+  }
+}
+
+@keyframes tt-subir {
+  from {
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes tt-aparecer {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes tt-saltito {
+  0%,
+  100% {
+    transform: none;
+  }
+  30% {
+    transform: translateY(-10px);
+  }
+  55% {
+    transform: none;
+  }
+  75% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes tt-nube-entrar {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+}
+
+@keyframes tt-latido {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+/* Panel administrativo (pedido 26). Como @utility, para usarlas junto a las de Tailwind (y que las encuentre en el
+   código). La escala de títulos y la tarjeta viven solo aquí: cambiarlas es tocar un lugar. */
+
+/* El h1 de cada pantalla */
+@utility tt-titulo-pagina {
+  font-size: 1.5rem;
+  line-height: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+/* El h2 de una sección o tarjeta */
+@utility tt-titulo-seccion {
+  font-size: 1.0625rem;
+  line-height: 1.5rem;
+  font-weight: 650;
+}
+/* El h3, dentro de una sección */
+@utility tt-titulo-sub {
+  font-size: 0.9375rem;
+  line-height: 1.375rem;
+  font-weight: 600;
+}
+/* Placas, números de cotización y cuentas grandes: se leen y se comparan de un vistazo */
+@utility tt-placa {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+/* La barra de progreso del panel al navegar (NavegacionPendiente, 17/11): fina, arriba de todo, en el azul de
+   "información" (el rojo es del botón principal y del módulo activo). Aparece a los 120 ms, así una respuesta inmediata
+   no la hace parpadear, y avanza rápido al principio y cada vez más lento, sin llegar al final hasta que la pantalla
+   llega (entonces se quita). Con "reducir movimiento", quieta. */
+@layer components {
+  .tt-progreso-navegacion {
+    position: fixed;
+    inset: 0 auto auto 0;
+    z-index: 60;
+    height: 3px;
+    width: 0;
+    background: var(--info);
+    opacity: 0;
+    pointer-events: none;
+    animation:
+      tt-progreso-aparece 0s linear 120ms forwards,
+      tt-progreso-avanza 8s cubic-bezier(0.1, 0.7, 0.2, 1) 120ms forwards;
+  }
+  @keyframes tt-progreso-aparece {
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes tt-progreso-avanza {
+    from {
+      width: 8%;
+    }
+    to {
+      width: 92%;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .tt-progreso-navegacion {
+      width: 100%;
+      animation: tt-progreso-aparece 0s linear 120ms forwards;
+    }
+  }
+}
+
+/* Pedido 56: la pasada de luz del probador de colores al elegir un color, en 60° (el ángulo de la marca) */
+.tt-pasada::after {
+  content: "";
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  left: -40%;
+  width: 22%;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.28), transparent);
+  transform: skewX(-30deg);
+}
+.tt-pasada--ver::after {
+  animation: tt-pasada 0.7s ease-out;
+}
+@keyframes tt-pasada {
+  to {
+    left: 130%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tt-pasada--ver::after {
+    animation: none;
+  }
 }

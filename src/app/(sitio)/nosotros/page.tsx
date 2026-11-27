@@ -1,0 +1,110 @@
+import type { Metadata } from "next";
+import { connection } from "next/server";
+import { Suspense } from "react";
+import { cn } from "cn";
+import { CierreWhatsApp } from "@/componentes/sitio/cierre-whatsapp";
+import { FotoResponsiva } from "@/componentes/sitio/foto-responsiva";
+import { TITULO_SECCION, TituloPagina } from "@/componentes/sitio/titulo-pagina";
+import { Monograma } from "@/componentes/sitio/iconos-marca";
+import { WhatsAppFijo } from "@/componentes/sitio/whatsapp";
+import { FOTOS_DE_PAGINA } from "@/modulos/sitio/contenido";
+import { contenidoPublico, fotoDePaginaPublica } from "@/modulos/sitio/publico";
+import { metadatosPagina } from "@/lib/sitio";
+
+export const metadata: Metadata = metadatosPagina({
+  titulo: "Nosotros",
+  descripcion: "Quiénes somos, cómo trabajamos y por qué elegir TocTar Detailing en Tarija.",
+  ruta: "/nosotros",
+});
+
+// HU-13 Nosotros (RF-02): historia, cómo trabajan y por qué elegirlos. Los textos salen del panel (HU-08), y la foto del
+// equipo también (pedido de YankoSoft del 24/10): al lado de la historia en la computadora, debajo en el celular.
+// Llega entera, con el título: nada aparece suelto antes que el resto (pulido 2.1 y 2.5, revisión de YankoSoft).
+export default function PaginaNosotros() {
+  return (
+    <>
+      <Suspense fallback={<div className="min-h-screen" />}>
+        <Contenido />
+      </Suspense>
+      <WhatsAppFijo />
+    </>
+  );
+}
+
+/** `entrada`: la historia, en blanco y más grande, es por donde se empieza a leer; el resto acompaña en gris (pulido 2.5). */
+function Parrafos({ texto, entrada = false }: { texto: string; entrada?: boolean }) {
+  return texto
+    .split(/\n\s*\n/)
+    .filter(Boolean)
+    .map((p, i) => (
+      <p
+        key={i}
+        className={cn(
+          "max-w-prose whitespace-pre-line",
+          entrada ? "text-xl leading-8 text-tinta md:text-[22px] md:leading-9" : "text-lg leading-7 text-tinta-suave",
+        )}
+      >
+        {p}
+      </p>
+    ));
+}
+
+async function Contenido() {
+  await connection();
+  const [n, equipo] = await Promise.all([contenidoPublico("nosotros"), fotoDePaginaPublica("nosotros")]);
+  const motivos = n.por_que_elegirnos as string[];
+  return (
+    <>
+      {/* El monograma detrás del título y del texto le da su toque a la página: se queda así (revisión de YankoSoft) */}
+      <section className="relative overflow-hidden">
+        {/* Con la foto del equipo, desde la tableta baja a "Cómo trabajamos": detrás de la foto parecía pegada encima (pulido 13.14) */}
+        <Monograma className={cn("pointer-events-none absolute -top-10 -right-24 w-[26rem] fill-superficie md:-right-12 md:w-[34rem]", equipo && "md:hidden")} />
+        <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 pt-6 pb-12 md:gap-20 md:pt-10 md:pb-20">
+          <div className={cn("grid gap-10", equipo && "md:grid-cols-2 md:items-start md:gap-12")}>
+            <div className="flex flex-col gap-8">
+              <TituloPagina>Nosotros</TituloPagina>
+              <div className="flex flex-col gap-4">
+                <Parrafos texto={n.historia as string} entrada />
+              </div>
+            </div>
+            {equipo && (
+              // Está en la primera pantalla: sin carga diferida
+              <FotoResponsiva
+                foto={equipo}
+                alt={FOTOS_DE_PAGINA.nosotros.alt}
+                sizes="(min-width: 768px) 50vw, 100vw"
+                cargaDiferida={false}
+                // Siempre 4:3, como las demás fotos del sitio; el borde la separa del fondo (revisión de YankoSoft, 06/11)
+                className="aspect-[4/3] w-full border border-border object-cover"
+              />
+            )}
+          </div>
+
+          <section aria-labelledby="como-trabajamos" className="relative isolate flex flex-col gap-4">
+            {equipo && <Monograma className="pointer-events-none absolute -top-8 -right-12 -z-10 hidden w-[24rem] fill-superficie md:block" />}
+            <h2 id="como-trabajamos" className={TITULO_SECCION}>Cómo trabajamos</h2>
+            <Parrafos texto={n.como_trabajamos as string} />
+          </section>
+
+          <section aria-labelledby="por-que" className="flex flex-col gap-6">
+            <h2 id="por-que" className={TITULO_SECCION}>Por qué elegirnos</h2>
+            <ul className="grid gap-x-10 gap-y-4 md:grid-cols-2">
+              {motivos.map((m) => (
+                <li key={m} className="flex items-baseline gap-3 border-t border-border pt-4 text-lg">
+                  {/* Marca a 60°, el único ángulo de la marca */}
+                  <span aria-hidden className="inline-block h-3 w-2 shrink-0 -skew-x-[30deg] bg-rojo" />
+                  {m}
+                </li>
+              ))}
+            </ul>
+          </section>
+        </div>
+      </section>
+      <CierreWhatsApp
+        titulo="¿Hablamos de tu vehículo?"
+        texto="Mándanos fotos o pasa por el taller y te decimos qué conviene hacer."
+        secundario={{ href: "/preguntas-frecuentes", texto: "Ver las preguntas frecuentes" }}
+      />
+    </>
+  );
+}

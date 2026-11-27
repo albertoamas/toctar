@@ -1,0 +1,245 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { Suspense } from "react";
+import { cn } from "cn";
+import { CalendarIcon } from "lucide-react";
+import Image from "next/image";
+import { AbrirFoto } from "@/componentes/panel/abrir-foto";
+import { AvisoFlotante } from "@/componentes/panel/aviso-flotante";
+import { Cargando } from "@/componentes/panel/cargando";
+import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
+import { Alerta } from "@/componentes/panel/alerta";
+import { Insignia } from "@/componentes/panel/insignia";
+import { PasosTrabajo } from "@/componentes/panel/pasos-trabajo";
+import { ListaFilas } from "@/componentes/panel/fila-lista";
+import { Seccion } from "@/componentes/panel/cabecera-seccion";
+import { FilaCliente, FilaVehiculo } from "@/componentes/panel/datos-en-bloques";
+import { rutaVehiculo } from "@/modulos/clientes/reglas";
+import { PaginaPanel } from "@/componentes/panel/pagina-panel";
+import { BOTON_PASO, PasoSiguiente } from "@/componentes/panel/paso-siguiente";
+import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
+import { buttonVariants } from "@/componentes/ui/button";
+import { fechaEnBolivia, formatearFecha } from "@/lib/fechas";
+import { puede, puedeVerModulo } from "@/lib/permisos";
+import { exigirModulo } from "@/lib/sesion";
+import { enlaceWhatsApp } from "@/lib/whatsapp";
+import { reservasDeConsulta } from "@/modulos/agenda/consultas/listas";
+import { pasoDelTrabajo } from "@/modulos/agenda/pasos";
+import { NOMBRE_ESTADO_TRABAJO, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
+import { BotonAcepto, MasCotizacion } from "@/modulos/cotizaciones/componentes/estado-cotizacion";
+import { VersionesCotizacion } from "@/modulos/cotizaciones/componentes/versiones-cotizacion";
+import { obtenerCotizacion } from "@/modulos/cotizaciones/consultas/ficha";
+import { estadoEnlace, NOMBRE_ESTADO, NOMBRE_MOTIVO, rutaEnlace, TONO_ESTADO } from "@/modulos/cotizaciones/reglas";
+import { rutaTrabajo } from "@/modulos/ordenes/reglas";
+import { aqui, conDesde, volverDesde } from "@/lib/volver";
+import { urlSitio } from "@/lib/sitio";
+import { obtenerDatosPublicos, obtenerPlantillas } from "@/modulos/configuracion/consultas";
+import { mensajeCotizacion } from "@/modulos/ordenes/mensajes";
+import { mostrarMonto } from "@/modulos/catalogo/reglas";
+
+export const metadata: Metadata = { title: "Cotización" };
+
+// Pedido 23 (P23-cotizacion-directa.md §5): una cotización con sus versiones y su PDF. Dueño o encargado con
+// "Cotizaciones" (pedido 24, RN-12). Pedido 31 (P31-flujo-de-un-trabajo.md §5): arriba, los pasos del trabajo; el paso
+// siguiente de una pendiente es "Aceptó"; el de una aceptada sin fecha, "Reservar en Agenda" (Cotizaciones cotiza y la
+// Agenda reserva; el botón es un atajo a su formulario, solo para quien ve la Agenda). "Nueva versión", "Rechazar" y
+// "Volver a pendiente" van en "Más". C6: una ficha de 1024 px; el paso siguiente, grande debajo de los pasos (como en
+// Reserva y Orden, PasoSiguiente) y los datos en bloques (`datos-en-bloques.tsx`), como en la orden.
+// Recorrido visual del 23/11: la placa como título (como en Reserva y Orden) y el número debajo; el estado con un punto,
+// sin píldora; los pasos del trabajo recién desde que se acepta (pendiente, el cliente todavía decide: puede rechazarla);
+// y, en una pendiente, «Enviar por WhatsApp» junto a «Aceptó», lo que se hace después de cotizar.
+export default function PaginaCotizacion({ params, searchParams }: PageProps<"/panel/cotizaciones/[id]">) {
+  return (
+    <PaginaPanel tipo="ficha">
+      <Suspense fallback={<Cargando volver={{ href: "/panel/cotizaciones", texto: "Cotizaciones" }} />}>
+        <Detalle params={params} searchParams={searchParams} />
+      </Suspense>
+    </PaginaPanel>
+  );
+}
+
+async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaciones/[id]">, "params" | "searchParams">) {
+  const usuario = await exigirModulo("cotizaciones");
+  const [{ id }, parametros] = await Promise.all([params, searchParams]);
+  const { creada, version, sinpdf } = parametros;
+  const numero = Number(id);
+  if (!Number.isInteger(numero) || numero <= 0) notFound();
+  const puedeAgendar = puedeVerModulo(usuario, "agenda");
+  // Las plantillas y el negocio, para "Enviar por WhatsApp" (pedido 47), junto con la cotización: están en caché
+  const conEnvio = puede(usuario, "cotizar");
+  const [c, reservas, plantillas, negocio] = await Promise.all([
+    obtenerCotizacion(numero),
+    puedeAgendar ? reservasDeConsulta(numero) : [],
+    conEnvio ? obtenerPlantillas() : null,
+    conEnvio ? obtenerDatosPublicos() : null,
+  ]);
+  if (!c) notFound();
+  // Pedido 43: "Volver" a la pantalla de la que se vino; los enlaces que salen de aquí dicen que vienen de esta cotización
+  const volver = volverDesde(parametros.volver, { href: "/panel/cotizaciones", texto: "Cotizaciones" }, usuario);
+  const desdeAqui = aqui(`/panel/cotizaciones/${c.id}`, parametros);
+  const verFicha = puedeVerModulo(usuario, "clientes");
+
+  const vigente = c.versiones.find((v) => v.estado === "enviada") ?? null;
+  const pendiente = c.estado === "cotizado";
+  // La versión que se reserva: la aceptada de una sin fecha
+  const aReservar = c.sinFecha ? (c.versiones.find((v) => v.estado === "aceptada") ?? null) : null;
+  const activa = reservas.find((r) => r.estado !== "cancelado");
+  // Sin ver la Agenda no se sabe en qué va su reserva: se queda en "Reservada"
+  const pasoActual = pasoDelTrabajo({ cotizacion: c.estado, trabajo: activa?.estado ?? (c.estado === "confirmado" && !c.sinFecha ? "agendado" : null) });
+  const cotiza = puede(usuario, "cotizar");
+  const recienGuardada = typeof version === "string" ? c.versiones.find((v) => String(v.id) === version) : undefined;
+  const sinPdf = sinpdf && !c.versiones[0].tienePdf;
+  // Pedido 47: "Enviar por WhatsApp" en cada versión que se puede mandar (vale y tiene su PDF), con la plantilla de
+  // Configuración > Mensajes y el enlace para el cliente
+  const hoy = fechaEnBolivia();
+  const rechazada = c.estado === "perdido";
+  const aEnviar = cotiza ? c.versiones.filter((v) => v.tienePdf && estadoEnlace({ ...v, rechazada }, hoy) === "vale") : [];
+  const enviar = new Map(
+    plantillas && negocio
+      ? aEnviar.map((v) => [
+          v.id,
+          enlaceWhatsApp(
+            c.telefono,
+            mensajeCotizacion({
+              plantilla: plantillas.cotizacion,
+              negocio: negocio.nombre,
+              cliente: c.cliente,
+              vehiculo: { marca: c.marca, modelo: c.modelo, placa: c.placa },
+              numero: v.numero,
+              enlace: `${urlSitio()}${rutaEnlace(v.enlace)}`,
+            }),
+          ),
+        ])
+      : [],
+  );
+  // Un solo WhatsApp a la vista (C6): con "Enviar por WhatsApp" en una versión, escribir sin el mensaje queda en "Más"
+  const escribir = enlaceWhatsApp(c.telefono);
+
+  // En una pendiente, mandarla por WhatsApp va arriba, junto a «Aceptó»: es lo que se hace después de cotizar
+  const enviarArriba = pendiente && vigente && enviar.has(vigente.id) ? vigente.id : null;
+  // El paso siguiente, uno solo: en una pendiente, "Aceptó" (y al lado, enviarla); en una aceptada sin fecha, el atajo a la Agenda
+  const paso =
+    aReservar && puedeAgendar ? (
+      <Link href={conDesde(`/panel/agenda/nueva?cotizacion=${aReservar.id}`, desdeAqui)} className={cn(buttonVariants({ size: "paso" }), BOTON_PASO)}>
+        <CalendarIcon />
+        Reservar en Agenda
+      </Link>
+    ) : pendiente && vigente ? (
+      <>
+        <BotonAcepto id={c.id} />
+        {enviarArriba && (
+          <a href={enviar.get(enviarArriba)} target="_blank" rel="noreferrer" className={cn(buttonVariants({ variant: "outline" }))}>
+            <IconoWhatsApp />
+            Enviar por WhatsApp
+          </a>
+        )}
+      </>
+    ) : null;
+  // El estado en su píldora y, si falta darle fecha, la alerta (paleta del 23/11)
+  const marca = (
+    <span className="flex flex-wrap items-center gap-1.5">
+      <Insignia tono={TONO_ESTADO[c.estado]}>{NOMBRE_ESTADO[c.estado]}</Insignia>
+      {c.sinFecha && <Alerta tipo="fecha">Sin fecha</Alerta>}
+    </span>
+  );
+
+  return (
+    <>
+      <EncabezadoPagina
+        volver={volver}
+        // La placa, como en Reserva y Orden (sin placa, una de antes del 22/11 de un interesado: el número)
+        titulo={c.placa ?? `Cotización ${c.numero}`}
+        // Debajo, el número y el estado; el cliente ya está en Datos
+        subtitulo={
+          <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            {c.placa && <span className="tabular-nums">Cotización {c.numero}</span>}
+            <span className="text-tinta">{marca}</span>
+          </span>
+        }
+        accion={
+          <div className="flex flex-wrap gap-2">
+            {enviar.size === 0 && (
+              <a href={escribir} target="_blank" rel="noreferrer" className={cn(buttonVariants({ variant: "outline" }))}>
+                <IconoWhatsApp />
+                Escribir por WhatsApp
+              </a>
+            )}
+            <MasCotizacion
+              id={c.id}
+              escribir={enviar.size > 0 ? escribir : null}
+              nuevaVersion={pendiente && vigente && cotiza ? conDesde(`/panel/cotizaciones/${c.id}/nueva-version?desde=${vigente.id}`, desdeAqui) : null}
+              cambios={pendiente ? ["rechazar"] : c.sinFecha ? ["rechazar", "reabrir"] : c.estado === "perdido" ? ["reabrir"] : []}
+              resumen={{ texto: `${c.numero} · ${c.cliente}`, total: vigente ? `${mostrarMonto(vigente.total)} Bs` : null }}
+            />
+          </div>
+        }
+      >
+        {/* "Rechazada: Precio. Le pareció caro." */}
+        {c.estado === "perdido" && c.motivoPerdida && `Rechazada: ${NOMBRE_MOTIVO[c.motivoPerdida]}.${c.detallePerdida ? ` ${c.detallePerdida}` : ""}`}
+      </EncabezadoPagina>
+      {/* Los pasos del trabajo, desde que se acepta: pendiente, el cliente todavía decide */}
+      {pasoActual !== null && !pendiente && <PasosTrabajo paso={pasoActual} />}
+      {paso && <PasoSiguiente>{paso}</PasoSiguiente>}
+      {(creada || recienGuardada) && (
+        <AvisoFlotante mensaje={`${creada ? "Cotización creada." : `Versión ${recienGuardada!.version} guardada.`}${sinPdf ? "" : " Envíasela al cliente por WhatsApp."}`} />
+      )}
+      {/* Lo que pide hacer algo no es temporal: queda a la vista hasta generarlo (con el PDF ya generado, se va solo) */}
+      {(creada || recienGuardada) && sinPdf && (
+        <p role="status" className="rounded-sm border border-aviso p-3 text-sm">
+          El PDF no se pudo generar: usa «Generar PDF».
+        </p>
+      )}
+
+      {/* En el celular, primero los datos (para quién es); en la computadora, el precio a la izquierda (es lo que decide)
+          y los datos a la derecha (pedido 26). Título y tarjeta, a la misma distancia que en Seccion */}
+      <div className="grid items-start gap-8 @4xl:grid-cols-[minmax(0,1fr)_24rem]">
+        {/* Pulido 13.50, como en la orden: en bloques, el cliente como una fila que lleva a su ficha. Cuándo y quién la
+            cotizó lo dice cada versión (la primera es la de cuando se registró) */}
+        <Seccion id="datos" titulo="Datos" sinRelleno>
+          <div role="group" aria-label="Datos de la cotización" className="flex flex-col divide-y divide-border">
+            {/* El encargado puede tener Cotizaciones sin Clientes: entonces no enlaza a una ficha que no puede abrir */}
+            {/* De un interesado (P31b), sin ficha a la que ir: se registra al reservar */}
+            <FilaCliente href={verFicha && c.clienteId ? conDesde(`/panel/clientes/${c.clienteId}`, desdeAqui) : null} nombre={c.cliente} telefono={c.telefono} />
+            {/* Como en Reserva y Orden, con la placa: aquí el título es el número de la cotización */}
+            {/* La ficha del vehículo, para quien ve Clientes (pedido 51) */}
+            <FilaVehiculo href={verFicha && c.clienteId && c.vehiculoId ? conDesde(rutaVehiculo(c.clienteId, c.vehiculoId), desdeAqui) : null}>
+              {c.placa && <span className="font-semibold">{c.placa}</span>}
+              {/* De un interesado (P31b): se registra al reservar */}
+              {c.interesado && <span className="text-sm text-tinta-suave">Sin registrar</span>}
+              {c.detalle.length > 0 && <span>{c.detalle.join(" ")}</span>}
+              <span className="text-sm text-tinta-suave">Tamaño: {c.tamano}</span>
+            </FilaVehiculo>
+            {/* La foto que se tomó al cotizar (P31b), para saber qué vehículo vino */}
+            {c.foto && (
+              <div className="grid grid-cols-[5.5rem_minmax(0,1fr)] gap-x-3 px-4 py-3">
+                <span className="text-tinta-suave">Foto</span>
+                <AbrirFoto fotos={[{ ...c.foto, alt: "Foto del vehículo al cotizar" }]} indice={0} titulo="Foto del vehículo" etiqueta="Ver la foto del vehículo" className="justify-self-start rounded-sm">
+                  <Image src={c.foto.miniatura} alt="" width={128} height={96} unoptimized className="h-24 w-32 rounded-sm object-cover" />
+                </AbrirFoto>
+              </div>
+            )}
+          </div>
+        </Seccion>
+
+        <Seccion id="versiones" titulo="Precio" sinRelleno className="@4xl:order-first">
+          <VersionesCotizacion consultaId={c.id} versiones={c.versiones} enviar={enviar} enviarArriba={enviarArriba} conGenerar={cotiza} />
+        </Seccion>
+      </div>
+
+      {reservas.length > 0 && (
+        <Seccion id="reservas" titulo="Reservas" sinRelleno>
+          <ListaFilas
+            etiqueta="Reservas"
+            filas={reservas.map((r) => ({
+              href: conDesde(rutaTrabajo(r.id, r.estado, puedeVerModulo(usuario, "ordenes")), desdeAqui),
+              titulo: `Reserva del ${formatearFecha(r.fechaInicio).slice(0, 5)}`,
+              estado: NOMBRE_ESTADO_TRABAJO[r.estado],
+              tonoEstado: TONO_ESTADO_TRABAJO[r.estado],
+            }))}
+          />
+        </Seccion>
+      )}
+    </>
+  );
+}

@@ -1,0 +1,148 @@
+"use client";
+
+import type { Route } from "next";
+import { useRouter } from "next/navigation";
+import { useActionState, useRef, useState } from "react";
+import { CheckIcon } from "lucide-react";
+import { useFocoEnError } from "@/componentes/foco-en-error";
+import { conAviso } from "@/componentes/panel/avisos";
+import { Campo, MensajeError } from "@/componentes/panel/campo";
+import { MenuMas, type AccionMas } from "@/componentes/panel/menu-mas";
+import { useCerrarModal } from "@/componentes/panel/modal-contexto";
+import { ModalFormulario } from "@/componentes/panel/modal-formulario";
+import { CancelarModal, PieModal } from "@/componentes/panel/modal-pie";
+import { FormularioPaso } from "@/componentes/panel/formulario-paso";
+import { Button } from "@/componentes/ui/button";
+import { Textarea } from "@/componentes/ui/textarea";
+import type { EstadoFormulario } from "@/lib/formularios";
+import { cambiarEstadoCotizacion } from "../acciones";
+import { MOTIVOS, NOMBRE_MOTIVO } from "../reglas";
+import { DatoClave } from "@/componentes/panel/dato-clave";
+import { OpcionesEnTarjetas } from "@/componentes/panel/opciones-en-tarjetas";
+
+// El menú "Más" de una cotización (pedido 23, como en las demás fichas): "Nueva versión" y "Rechazar" en una pendiente
+// (rechazar pide el motivo en un modal); "Volver a pendiente" en una rechazada; "Rechazar" y "Volver a pendiente" en
+// una aceptada sin fecha (pedido 31). Se usan poco: el paso siguiente ("Aceptó", `BotonAcepto`) va grande debajo de los
+// pasos (PasoSiguiente, C6).
+
+type Props = {
+  id: number;
+  /** A dónde lleva "Nueva versión" (pendiente y quien mira puede cotizar). */
+  nuevaVersion: Route | null;
+  /** "rechazar": una pendiente; "reabrir": una rechazada; los dos: una aceptada sin fecha. */
+  cambios: ("rechazar" | "reabrir")[];
+  /** El chat del cliente sin mensaje, cuando una versión ya lleva "Enviar por WhatsApp" (un solo WhatsApp a la vista, C6). */
+  escribir: string | null;
+  /** Qué se rechaza, arriba del modal (C7 §5.4): "2026-0042 · Paola Torrez" y su total. */
+  resumen: { texto: string; total: string | null };
+};
+
+export function MasCotizacion({ id, nuevaVersion, cambios, escribir, resumen }: Props) {
+  const router = useRouter();
+  const [abierta, setAbierta] = useState<"rechazar" | "reabrir" | null>(null);
+  const cerrar = (abierto: boolean) => !abierto && setAbierta(null);
+  const acciones: AccionMas[] = [];
+  if (nuevaVersion) acciones.push({ texto: "Nueva versión", alElegir: () => router.push(nuevaVersion) });
+  if (cambios.includes("rechazar")) acciones.push({ texto: "Rechazar", alElegir: () => setAbierta("rechazar") });
+  if (cambios.includes("reabrir")) acciones.push({ texto: "Volver a pendiente", alElegir: () => setAbierta("reabrir") });
+  if (escribir) acciones.push({ texto: "Escribir por WhatsApp", href: escribir });
+  if (acciones.length === 0) return null;
+  return (
+    <>
+      <MenuMas acciones={acciones} />
+      <ModalFormulario titulo="Rechazar la cotización" abierto={abierta === "rechazar"} alCambiar={cerrar}>
+        <FormularioRechazar id={id} resumen={resumen} />
+      </ModalFormulario>
+      <ModalFormulario titulo="Volver a pendiente" abierto={abierta === "reabrir"} alCambiar={cerrar}>
+        <FormularioReabrir id={id} />
+      </ModalFormulario>
+    </>
+  );
+}
+
+function FormularioRechazar({ id, resumen }: { id: number; resumen: Props["resumen"] }) {
+  const cerrar = useCerrarModal();
+  const [resultado, accion, enviando] = useActionState<EstadoFormulario, FormData>(
+    conAviso(cambiarEstadoCotizacion, (r) => r.ok && cerrar()),
+    {},
+  );
+  const formulario = useRef<HTMLFormElement>(null);
+  useFocoEnError(formulario, resultado);
+  const v = resultado.valores ?? {};
+  const e = resultado.errores ?? {};
+  // Controlado, con su campo oculto: React reinicia el formulario tras un error y los radios de base-ui se vaciaban
+  const [elegido, setElegido] = useState(v.motivo ?? "");
+
+  return (
+    <form ref={formulario} action={accion} className="flex flex-col gap-6" noValidate aria-label="Rechazar la cotización">
+      <input type="hidden" name="id" value={id} />
+      <input type="hidden" name="accion" value="rechazar" />
+      {resultado.mensaje && !resultado.ok && <MensajeError id="rechazar-error">{resultado.mensaje}</MensajeError>}
+      <DatoClave etiqueta={resumen.texto} valor={resumen.total} />
+      {/* El motivo en tarjetas que se tocan enteras, como "Cómo pagó" (C7 §5.4) */}
+      <OpcionesEnTarjetas
+        id="motivo"
+        titulo="Motivo"
+        nombre="motivo"
+        valor={elegido}
+        cambiar={setElegido}
+        opciones={MOTIVOS.map((m) => ({ valor: m, texto: NOMBRE_MOTIVO[m] }))}
+        error={e.motivo}
+        className="grid-cols-2"
+      />
+      <Campo id="detalle" etiqueta="Detalle" opcional={elegido !== "otro"} error={e.detalle} ayuda={elegido === "otro" ? "Con «Otro», escribe qué pasó." : "Opcional."}>
+        <Textarea id="detalle" name="detalle" rows={2} defaultValue={v.detalle} aria-invalid={!!e.detalle} aria-describedby={e.detalle ? "detalle-error" : "detalle-ayuda"} />
+      </Campo>
+      <PieModal>
+        <Button type="submit" disabled={enviando}>
+          {enviando ? "Guardando…" : "Sí, rechazar"}
+        </Button>
+        <CancelarModal />
+      </PieModal>
+    </form>
+  );
+}
+
+function FormularioReabrir({ id }: { id: number }) {
+  const cerrar = useCerrarModal();
+  const [resultado, accion, enviando] = useActionState<EstadoFormulario, FormData>(
+    conAviso(cambiarEstadoCotizacion, (r) => r.ok && cerrar()),
+    {},
+  );
+  return (
+    <form action={accion} className="flex flex-col gap-5" aria-label="Volver a pendiente">
+      <input type="hidden" name="id" value={id} />
+      <input type="hidden" name="accion" value="reabrir" />
+      {resultado.mensaje && !resultado.ok && <MensajeError id="reabrir-error">{resultado.mensaje}</MensajeError>}
+      <p>La cotización vuelve a pendiente con su versión vigente, y se puede reservar o hacer una nueva versión.</p>
+      <PieModal>
+        <Button type="submit" disabled={enviando}>
+          {enviando ? "Guardando…" : "Sí, volver a pendiente"}
+        </Button>
+        <CancelarModal focoInicial />
+      </PieModal>
+    </form>
+  );
+}
+
+/**
+ * "Aceptó" (pedido 31): la cotización queda aceptada y, sin fecha, en "Por reservar" de la Agenda. Sin confirmación: se
+ * deshace con "Volver a pendiente". El aviso sale flotante, como todo cambio en la misma pantalla.
+ */
+export function BotonAcepto({ id }: { id: number }) {
+  const [resultado, accion, enviando] = useActionState<EstadoFormulario, FormData>(conAviso(cambiarEstadoCotizacion), {});
+  return (
+    // El paso siguiente de una pendiente: grande, como en Reserva y Orden (PasoSiguiente, C6)
+    <FormularioPaso
+      etiqueta="Aceptó"
+      accion={accion}
+      ocultos={{ id, accion: "aceptar" }}
+      enviando={enviando}
+      error={resultado.ok ? undefined : resultado.mensaje}
+      idError="aceptar-error"
+    >
+      <CheckIcon />
+      {enviando ? "Guardando…" : "Aceptó"}
+    </FormularioPaso>
+  );
+}

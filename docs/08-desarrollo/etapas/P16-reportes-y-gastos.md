@@ -1,0 +1,210 @@
+# P16 Reportes y gastos — especificación
+
+- **Fase y semana:** C. Entrega 2 · del 16 al 27 de noviembre de 2026, junto con el cierre (se entrega con la Entrega 2)
+- **Estado:** programada el 16/11/2026 (gastos y reportes, en un PR desde la rama `p16-gastos`); aprobada por YankoSoft el 16/11/2026, con las dos decisiones de §12 como se proponen (los gastos, solo el dueño; las categorías, en Configuración → Parámetros). Se programa después del lavado de cara de la Agenda.
+- **Pedido:** 16 de `03-cierre-comercial/registro-de-cambios.md`. Aprobada el 16/11/2026 la **opción B**: reportes y gastos con la ganancia del mes, Bs 720. Pagado el 50 %; el otro 50 %, al entregar.
+- **Prototipo aprobado por el dueño:** el de la cotización (opción B: "Reportes con gastos", "Gastos del mes" y "Registrar gasto", en el celular y en la computadora). Está en `out/prototipo-reportes` (local) y en el artifact de la cotización.
+- **Base:**
+  - los pagos de los clientes (`pago`, C3), que ya tienen fecha, método, comprobante y anulación;
+  - los trabajos y sus líneas (`trabajo`, `trabajo_linea`, C4);
+  - las cotizaciones y su motivo de pérdida (`consulta`, C2);
+  - los mantenimientos (`recordatorio_mantenimiento`, P21).
+
+## 1. Objetivo
+Que el dueño vea, en una pantalla, **cuánto entró, cuánto salió y cuánto le quedó** en el mes, en qué se le fue la plata y cómo le fue al taller. Para eso registra sus gastos desde el celular, con la foto del comprobante.
+
+## 2. Alcance
+- **Incluye:**
+  - **Gastos:** registrar un gasto (qué se pagó, monto, cómo, fecha, detalle y comprobante opcionales), la lista del mes con filtro por categoría, ver el comprobante y anular un gasto con su motivo. Nada se borra (RN-14).
+  - **Las categorías de gasto**, editables en Configuración. Vienen cuatro: Insumos y productos, Alquiler del local, Luz, agua e internet, y Otros.
+  - **Reportes, de un mes:** "Este mes" o "Mes pasado".
+    - **Ganancia:** "Entró − Salió = Quedó", con la comparación con el mes anterior y qué parte de lo que entró quedó.
+    - **Últimos 6 meses:** lo que entró, lo que salió y lo que quedó, en barras.
+    - **En qué se gastó:** por categoría, de mayor a menor.
+    - **El taller en el mes:** vehículos entregados y servicios más pedidos.
+    - **Cotizaciones:** cuántas se enviaron, cuántas se aceptaron y por qué no se aceptaron.
+    - **Clientes y mantenimientos:** clientes que volvieron, los que vinieron por primera vez, mantenimientos avisados y cuántos reservaron después del aviso.
+  - **El menú:** "Gastos" y "Reportes" en Finanzas, junto a Saldos pendientes, solo para el dueño (19/11; antes, "Reportes" en Administración).
+- **No incluye:**
+  - Sueldos ni pagos al personal (pedido 15, Sistema completo).
+  - Contabilidad, impuestos o facturación: "Quedó" es lo que entró menos lo que se registró como gasto, no un balance contable.
+  - Exportar a Excel o PDF, comparar otros períodos (un mes cualquiera o un año) y reportes por encargado: quedan para el Sistema completo.
+
+## 3. Reglas que se cumplen
+- **RN-01 y permisos:** solo el dueño ve los Reportes y registra o anula gastos. El módulo `reportes` no se asigna a encargados, como el Catálogo y Configuración. Cada página y acción llama a `exigirModulo("reportes")`.
+- **Qué cuenta como "entró":** los pagos **no anulados** de los clientes, por su **fecha de pago**, en hora de Bolivia. No cuenta lo cotizado ni lo reservado: solo lo cobrado.
+- **Qué cuenta como "salió":** los gastos **no anulados**, por su fecha.
+- **RN-14:** un gasto no se borra. Se anula con su motivo, como un pago (quién y cuándo), y deja de contar.
+- **Fechas:** se guarda la fecha del gasto (`date`). Los meses se cortan en hora de Bolivia (`America/La_Paz`).
+- **Montos:** `numeric(12,2)`, mayores a cero, con la misma lectura que los pagos (`leerMonto`, "250" o "250,50"). Se muestran como "Bs 1.180".
+- **Comprobantes:** son datos del negocio, así que van al bucket **privado** (`guardarFoto(…, { privado: true })`) y se ven con `urlsFotoPrivada`, como los comprobantes de pago.
+- **Todo configurable:** las categorías, desde el panel. Nada fijo en el código salvo las cuatro iniciales, que se cargan con la migración.
+
+## 4. Datos
+Migración `0052_gastos` (era la 0050; pasó a 0052 al unirse con las marcas del pedido 52, 19/11):
+- **`categoria_gasto`:**
+  - `id`, `nombre` (text, único entre las activas), `orden` (int) y `activo` (bool, true);
+  - datos iniciales: las cuatro categorías.
+- **`gasto`:**
+  - `id`, `categoria_id` (→ `categoria_gasto`), `monto` (numeric(12,2), > 0), `metodo` (`efectivo` | `qr` | `transferencia`, como `METODOS_PAGO`), `fecha` (date), `detalle` (text, nulo, hasta 200), `comprobante_archivo_id` (→ `archivo`, nulo);
+  - de la anulación: `anulado` (bool, false), `motivo_anulacion`, `anulado_at` y `anulado_por`;
+  - `created_at` y `created_by`;
+  - índice por `fecha` (los reportes y la lista son por mes).
+
+Consultas nuevas en `modulos/reportes/consultas.ts`:
+- `resumenDelMes(mes)` devuelve entró, salió, quedó, la comparación con el mes anterior y los gastos por categoría;
+- `ultimosMeses(mes, 6)`;
+- `elTallerEnElMes(mes)`;
+- `gastosDelMes(mes, categoria?)`.
+
+Los meses llegan como `AAAA-MM` y se convierten a rango de fechas en Bolivia.
+
+## 5. Pantallas y rutas
+- **`/panel/reportes`** (tipo `lista`, 1280 px). Arriba, "Este mes" y "Mes pasado" (`?mes=`). Debajo, en este orden:
+  1. "Ganaste Bs X, N % más que en {mes anterior}." y la cuenta "Entró − Salió = Quedó", con la acción principal **"Registrar gasto"**.
+  2. "Últimos 6 meses", en barras.
+  3. "En qué se gastó", con "Ver todos los gastos".
+  4. "El taller en el mes".
+  5. "Servicios más pedidos".
+  6. "Cotizaciones".
+  7. "Clientes y mantenimientos".
+
+  En la computadora, como el prototipo: la ganancia arriba y lo demás en tarjetas de a dos. Un mes sin pagos ni gastos: "Todavía no hay movimientos en {mes}."
+- **`/panel/reportes/gastos`** (tipo `lista`): "Gastos" de un mes, con su total, el filtro por categoría (`Filtros`) y la lista (fecha, categoría, detalle, método, monto y "Con comprobante"). Cada fila abre el gasto en un modal, con su comprobante y "Anular gasto" en "Más", con su motivo. La acción principal es "Registrar gasto". Vacío: "Todavía no hay gastos en {mes}."
+- **"Registrar gasto"** es un modal (`ModalFormulario`), como "Registrar pago", que también lleva una foto. Tiene:
+  - "Qué se pagó": las categorías, en tarjetas;
+  - "Monto (Bs)";
+  - "Cómo se pagó": efectivo, QR o transferencia;
+  - "Detalle" (opcional);
+  - "Comprobante" (opcional), con la cámara o la galería;
+  - "Fecha", que por defecto es hoy.
+
+  Al guardar: "Gasto registrado: {categoría}, Bs X." y la lista o el reporte se ponen al día.
+- **Configuración → Parámetros:** la sección "Categorías de gasto" (`ListaEditable`), para agregar, renombrar, ordenar y desactivar. Una categoría con gastos no se borra: se desactiva.
+- **El menú:** "Gastos" (un recibo) y "Reportes" (barras), en Finanzas, solo para el dueño. En Gastos se marca solo Gastos, no también Reportes.
+
+- **Ajustes al programar los gastos (16/11):**
+  - cada gasto va en una fila, como un pago en la orden (pulido 13.49): con su comprobante a la izquierda y "Anular gasto" en su "⋯". No hay un modal de detalle, porque la fila ya dice todo;
+  - los montos se escriben como en el resto del panel: "1180,50 Bs";
+  - el mes va primero en la barra y los filtros por categoría solo aparecen si hay gastos de más de una;
+  - el monto es `numeric(10,2)`, como el de un pago (hasta 99.999.999,99 Bs por gasto): las sumas del mes se hacen en la consulta y no tienen ese tope;
+  - con un filtro, el total es el de esa categoría y se queda al cambiar de mes. Los meses van desde enero del año pasado, igual que las fechas de un gasto.
+
+- **Reportes con pestañas (16/11, prototipo aprobado ese día, opción A del registro de cambios):** `?vista=` resumen, ingresos, gastos o taller, y `?mes=pasado`.
+  - **Resumen:** Ingresos, Gastos, Ganancia y Margen con su cambio frente al mes anterior; **lo neto del mes** en una torta (lo que quedó y lo que se fue en gastos, primero) y los **6 meses** en barras de ingresos y gastos con la línea de la ganancia.
+  - **Ingresos:** ingresos del mes, promedio por vehículo y por cobrar (lleva a Saldos); **lo acumulado día a día** frente al mes anterior y **por forma de pago**.
+  - **Gastos:** por categoría, **los 6 meses en barras apiladas** por categoría y la lista del mes (con "Ver todos y filtrar").
+  - **Taller y clientes:** **entregados** y **clientes nuevos y los que volvieron** en 6 meses (líneas), servicios más pedidos, **el embudo de cotizaciones** (enviadas, aceptadas, reservadas) y los mantenimientos.
+  - Colores (tokens `grafico-*` de `globals.css`, revisados con el validador de la skill dataviz): esmeralda para lo que entra, rojo para lo que sale y, para series, azul, ámbar, violeta y rosa en ese orden (desde la quinta categoría, "Las demás"). Cada marca lleva su nombre o su número escrito.
+
+## 6. Acciones del servidor
+Todas en `modulos/reportes/acciones.ts`, con `exigirModulo("reportes")` y Zod (el mismo esquema en el formulario y en el servidor):
+- **`registrarGasto(formData)`:**
+  - recibe la categoría (activa), el monto (> 0, hasta el máximo de los pagos), el método, la fecha (no futura, de este año o el anterior), el detalle (≤ 200) y la foto opcional (como el comprobante de un pago);
+  - guarda el gasto y su archivo privado;
+  - responde "Gasto registrado." o el error junto al campo.
+- **`anularGasto({ id, motivo })`:** el motivo es obligatorio (≤ 200). Un gasto ya anulado no se vuelve a anular.
+- **Las categorías:** agregar, renombrar, mover y activar o desactivar, con las mismas reglas que las listas de Configuración (`ListaEditable`).
+- **Después de cada cambio:** `revalidatePath("/panel/reportes", "layout")`.
+
+## 7. Componentes y diseño
+- **Del panel:** `EncabezadoPagina`, `Filtros` (este mes y mes pasado; las categorías), `ModalFormulario`, `ListaEditable` y `Insignia`, y las tarjetas de selección de "Registrar pago" para las categorías y el método.
+- **Nuevos:**
+  - `BarrasMeses`: barras en SVG, con su texto para el lector de pantalla y los números con `tabular-nums`;
+  - `CuentaDelMes`: "Entró − Salió = Quedó".
+
+  Colores con los tokens del panel. Las barras distinguen "Entró" y "Salió" por el tono y además por su leyenda escrita (no solo por el color).
+
+## 8. Textos de la interfaz
+- **Títulos:** "Reportes", con el subtítulo "Cuánto entró, cuánto salió y cuánto quedó", y "Gastos".
+- **Cuentas:**
+  - "Ganaste Bs X, N % más que en {mes}." (o "menos que"; sin mes anterior con datos, sin la comparación);
+  - "Entró", "Salió" y "Quedó";
+  - "de N vehículos", "en N gastos" y "N % de lo que entró".
+- **Secciones:** "Últimos 6 meses", "En qué se gastó", "Ver todos los gastos", "El taller en el mes", "Servicios más pedidos" (con "El más pedido"), "Cotizaciones" y "Clientes y mantenimientos".
+- **Cotizaciones:** "De N que enviaste, aceptaron M. La razón más común para no aceptar fue {motivo}."
+- **Registrar un gasto:** "Registrar gasto", "Qué se pagó", "Monto (Bs)", "Cómo se pagó", "Detalle", "Comprobante", "Guardar gasto" y "Gasto registrado".
+- **Anular un gasto:** "Anular gasto", "Motivo" y "Gasto anulado".
+- **Errores:** "Escribe el monto del gasto." y "Elige qué se pagó."
+- **Pie de los reportes:** "Lo que entró sale de los pagos registrados; lo que salió, de los gastos."
+
+### Fechas y gráficos de Resumen (17/11)
+
+- **Fechas:** Hoy · Esta semana · Este mes (por omisión) · Mes pasado · Elegir fechas (desde y hasta, hasta un año, sin
+  fechas futuras). Van en la dirección (`?periodo=hoy|semana|mes-pasado|rango&desde=&hasta=`); un rango que no sirve
+  muestra los últimos 30 días. Cada período se compara con el anterior **del mismo largo**: este mes (del 1 a hoy) contra
+  los mismos días del mes pasado, hoy contra ayer, esta semana contra la misma parte de la pasada, un rango contra los días
+  justo antes (`periodoDe` en `reglas.ts`, con pruebas). El gráfico de 6 meses llega hasta el mes en que termina el período.
+- **Gráficos:** shadcn/ui Charts (Recharts) en Resumen (`graficos-resumen.tsx`): detalle al pasar el mouse o tocar, eje
+  con números redondos (`escalaBonita`), leyenda en el orden Ingresos, Gastos, Ganancia, sin animación al cargar. Las otras
+  pestañas siguen por mes y con los gráficos propios hasta su revisión.
+- **Ingresos (17/11):** respeta las fechas. Tarjetas como Resumen: Ingresos, Vehículos entregados, Promedio por
+  vehículo (lo que suman los trabajos entregados, menos su descuento, entre cuántos son: un adelanto suelto no cuenta como
+  un vehículo) y Por cobrar hoy (no depende de las fechas; lleva a Saldos pendientes; "Nadie debe" en cero). "Cómo van los
+  ingresos": lo juntado día a día contra el mes o la semana anterior enteros (este mes, esta semana) o el período anterior
+  del mismo largo (lo demás), con shadcn Charts; con "Hoy" no se muestra. "Por forma de pago" sigue como lista con barras.
+- **Gastos (17/11):** es el reporte de los gastos, no su lista (buscar, anular o ver un comprobante sigue en su propia
+  pantalla, por mes, con "Ver la lista de gastos"). Respeta las fechas y va en rojo (`grafico-gasto`, no el rojo de marca):
+  tarjetas Gastos, Gasto por vehículo (los gastos entre los vehículos entregados) y Lo que más pesa (la categoría mayor y
+  su %); "Cómo van los gastos", el mismo gráfico que el de los ingresos, en rojo (sin él con "Hoy"); y "Por categoría", la
+  lista con barras rojas. Se quitan la lista de los últimos gastos y las barras apiladas de 6 meses (ya están en Resumen).
+  Los montos de la lista de gastos siguen como en todo el panel ("1180,50 Bs", sin punto de miles).
+- **Las tendencias siguen las fechas (17/11):** el gráfico de Resumen ("Ingresos y gastos") y el de Taller y clientes
+  ya no son siempre "los últimos 6 meses": agrupan solos según el largo de las fechas (`tramosDe`): hasta un mes, por día;
+  hasta 3 meses, por semana (de lunes a domingo, recortada); más, por mes, y un mes recortado lo dice en su detalle ("Del
+  1 al 17 de noviembre"). Con "Hoy" no hay tendencia. El filtro suma **"6 meses"** (del día 1 de hace 5 meses a hoy) para
+  ver la tendencia larga con un toque. La línea de la ganancia, solo por mes (por día o semana es ruido); el eje baja del
+  0 si un mes tuvo pérdida.
+- **Taller y clientes (17/11):** respeta las fechas. Tarjetas: Vehículos entregados, Clientes (nuevos y los que
+  volvieron), Cotizaciones aceptadas (%, con el cambio en puntos) y Mantenimientos avisados (y cuántos reservaron).
+  "Clientes atendidos": barras apiladas, nuevos y volvieron (azul y violeta; el verde y el rojo son de ingresos y gastos),
+  en lugar de las dos líneas de 6 meses. "Servicios más pedidos" y "Cotizaciones" (el embudo y por qué no aceptaron),
+  como listas con barras. Ya no queda ningún gráfico hecho a mano: `graficos.tsx` se borró y la lista con barras quedó
+  en `barras-horizontales.tsx`.
+- **Ajustes del dueño (17/11):** sin "Hoy" en las fechas (un día no tiene tendencia y lo del día está en el Inicio);
+  "Elegir fechas" se aplica solo al cambiar una fecha (sin "Ver"), con un aviso si no sirven; "Ingresos y gastos" sin la
+  línea de la ganancia (ya está en la tarjeta y la torta); Cotizaciones sin la fila "Enviadas" (Aceptadas y Reservadas,
+  medidas contra las enviadas, con su %); los nombres de las listas, leyendas y detalles en grosor 500 (en 400,
+  Montserrat se veía floja junto al número en 600).
+- **Títulos (17/11):** dicen qué se mide y, tras una coma, cómo se corta; sin frases de conversación y con el mismo
+  nombre en Ingresos y en Gastos: "Ganancia y gastos" (antes "Lo neto"), "Ingresos acumulados" y "Gastos acumulados"
+  (antes "Cómo van…"), "Ingresos por forma de pago", "Gastos por categoría", "Ingreso por vehículo" (antes "Promedio por
+  vehículo", como "Gasto por vehículo"), "Mayor gasto" (antes "Lo que más pesa") y "Resultado de las cotizaciones".
+- **Lista de gastos (17/11), como las otras listas del panel:** el mes centrado con sus dos flechas siempre en su lugar
+  (la que no se puede usar, apagada); los filtros por categoría; el total en la línea de arriba (`ResumenLista`, como
+  Saldos: "4862 Bs en 7 gastos de noviembre de 2026", y los anulados aparte); en la computadora, una tabla
+  (`TablaAcciones`, como Saldos y Mantenimientos: Fecha, Gasto, Categoría, Cómo se pagó, Monto y el comprobante y "⋯");
+  más angosto, tarjetas. El detalle es el título de cada gasto (sin él, la categoría); la fecha, corta ("12/11"); un
+  anulado, tachado con la insignia "Anulado" y su motivo.
+- **Datos para probar:** `npm run datos:reportes` carga seis meses de trabajos, pagos, gastos, cotizaciones y
+  mantenimientos sobre la base local (se rehace al volver a correrlo; `-- --quitar` lo saca).
+
+## 9. Pruebas
+- **Unitarias** (`tests/unit/reportes.test.ts`):
+  - los meses en hora de Bolivia, también un pago a las 23:30 del último día;
+  - la ganancia y el porcentaje, con un mes anterior en cero;
+  - el esquema de un gasto: monto, fecha futura y categoría.
+- **De punta a punta** (`tests/e2e/p16-reportes.spec.ts`):
+  - registrar un gasto con su comprobante, que aparezca en la lista y en el reporte, y que lo que salió y lo que quedó cambien;
+  - anular un gasto, que deje de contar y se vea anulado;
+  - los pagos del mes en lo que entró, sin los anulados;
+  - "Mes pasado" muestra otro mes;
+  - un encargado, incluso con todos sus permisos, no ve "Reportes" ni entra a sus direcciones;
+  - las categorías: agregar una en Configuración y usarla al registrar.
+
+## 10. Orden de trabajo
+Una rama, `p16-reportes-y-gastos`, en dos PR:
+1. **Los gastos:** la migración, las categorías en Configuración, registrar, la lista y anular, con sus pruebas.
+2. **Los reportes:** las consultas y la pantalla, con sus pruebas, y el menú.
+
+`code-review` en cada uno. `security-review` en el primero, porque toca archivos privados, montos y un módulo nuevo.
+
+## 11. Criterio de salida
+- En el celular, el dueño registra un gasto con su foto en menos de un minuto.
+- En "Reportes" ve cuánto le quedó en el mes, y los números coinciden con los pagos y los gastos cargados.
+- Ningún encargado ve los montos de los reportes.
+- Pruebas en verde.
+
+## 12. Decisiones abiertas
+- **¿Registra gastos solo el dueño?** El prototipo dice que estas pantallas son solo del dueño. Si quiere que un encargado (por ejemplo, el de Atención) registre gastos sin ver los reportes, se suma un permiso "Gastos" aparte. Mientras tanto, solo el dueño.
+- **¿Dónde se editan las categorías?** Propuesta: Configuración → Parámetros. Otra opción es una pestaña "Gastos" en Configuración.

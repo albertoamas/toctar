@@ -1,29 +1,45 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Barlow_Condensed, Montserrat } from "next/font/google";
+import { sitioIndexable, urlSitio } from "@/lib/sitio";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Tipografías de la identidad visual: Montserrat (la del lema del logo) para todo el texto,
+// Barlow Condensed en itálica para los titulares. Solo los pesos que se usan (700 y 800, en itálica): cada
+// peso y estilo es un archivo que se descarga antes de pintar; antes eran 6 y quedan 2 (pulido 2, rendimiento).
+const texto = Montserrat({
+  variable: "--font-texto",
   subsets: ["latin"],
+  weight: ["400", "500", "600"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const titular = Barlow_Condensed({
+  variable: "--font-titular",
   subsets: ["latin"],
+  weight: ["700", "800"],
+  style: ["italic"],
 });
 
 export const metadata: Metadata = {
-  title: "TocTar Detailing",
+  title: {
+    default: "TocTar Detailing",
+    template: "%s · TocTar Detailing",
+  },
   description: "Detailing automotriz en Tarija, Bolivia",
+  // SITIO_URL y SITIO_INDEXABLE se leen en el build: en Coolify van marcadas como variables de build.
+  metadataBase: new URL(urlSitio()),
+  ...(!sitioIndexable() && { robots: { index: false, follow: false } }),
 };
+
+// Barra del navegador y de la app instalada en negro, como la marca.
+export const viewport: Viewport = { themeColor: "#000000" };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html
-      lang="es"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">{children}</body>
+    // suppressHydrationWarning: el script del panel marca <html data-menu> antes de que React la tome (menu-comprimido.tsx)
+    <html lang="es" className={`${texto.variable} ${titular.variable} h-full antialiased`} suppressHydrationWarning>
+      <body className="flex min-h-full flex-col">
+        {children}
+      </body>
     </html>
   );
 }

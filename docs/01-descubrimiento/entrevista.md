@@ -58,7 +58,7 @@ Texto que TocTar usaba para presentarse. Se recibió antes de la entrevista.
 ## Datos adicionales de la conversación
 
 - Las reservas hoy se anotan en papel.
-- El dueño quiere un sitio público parecido al de [Detailing Center Bolivia](https://www.detailingcenterbo.com/). Ver `sitio-referencia.md`.
+- El dueño quiere un sitio público parecido al de [Detailing Center Bolivia](https://www.detailingcenterbo.com/).
 
 ## Puntos clave
 

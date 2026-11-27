@@ -9,6 +9,8 @@ Cubren el recorrido completo de un trabajo: consulta → cotización → reserva
 
 ## 1. Consulta y cotización en PDF (CU-10, CU-11)
 
+> **Cambió con el pedido 23 (01/11/2026):** ya no hay consulta aparte. La cotización se arma directo, en una pantalla (cliente, vehículo, servicios y cómo se cotizó), y queda pendiente hasta que se agenda (aceptada) o se rechaza. El resto del flujo (precios sugeridos, PDF, compartir y versiones) sigue como abajo. Ver `08-desarrollo/etapas/P23-cotizacion-directa.md`.
+
 ```mermaid
 sequenceDiagram
     actor D as Dueño
@@ -61,7 +63,7 @@ sequenceDiagram
     alt Sin espacio libre
         A-->>P: Aviso: elegir otra fecha
     else Hay espacio
-        P->>A: Espacio, técnico (opcional) y adelanto
+        P->>A: Espacio y adelanto
         A->>S: Guardar reserva y pago de adelanto
         Note over S: Revalida que el espacio siga libre (RN-06)
         S-->>A: Reserva creada · consulta en "confirmado"
@@ -70,12 +72,14 @@ sequenceDiagram
 
 La segunda validación en el servidor evita que dos personas reserven el mismo espacio al mismo tiempo.
 
-## 3. Ingreso del vehículo y trabajo del técnico (CU-15, CU-16)
+## 3. Ingreso del vehículo y trabajo en el taller (CU-15, CU-16)
+
+Desde el pedido 32 no hay técnico asignado: trabaja la orden cualquiera con el permiso de Órdenes (por ejemplo, un encargado con el perfil Taller).
 
 ```mermaid
 sequenceDiagram
     actor P as Personal
-    actor T as Técnico
+    actor T as Taller
     participant A as App
     participant S as Servidor
     participant F as Almacenamiento de fotos
@@ -86,18 +90,18 @@ sequenceDiagram
     A->>S: Crear orden
     S-->>A: Orden en "recibido"
 
-    T->>A: Mis órdenes
-    A->>S: Pedir órdenes del técnico
-    Note over S: Solo las asignadas, sin precios (RN-12)
+    T->>A: Órdenes
+    A->>S: Pedir las órdenes abiertas
+    Note over S: Todas; sin Pagos, sin precios (RN-12)
     S-->>A: Lista de órdenes
-    T->>A: Pasar a "en proceso" y subir fotos de antes
+    T->>A: Pasar a "en proceso" y subir fotos de inicio
     A->>F: Subir fotos
     A->>S: Actualizar orden
     loop Durante el trabajo
         T->>A: Avances, notas y fotos
         A->>S: Actualizar orden
     end
-    T->>A: Fotos de después y marcar "listo"
+    T->>A: Fotos del final y marcar "listo"
     A->>S: Orden en "listo"
 ```
 
@@ -128,7 +132,7 @@ sequenceDiagram
     else Queda saldo
         D->>A: Autorizar entrega con saldo
         A->>S: Marcar entregado
-        Note over S: Verifica rol dueño (RN-13)
+        Note over S: Verifica dueño o permiso de encargado (RN-13)
     end
     opt El servicio genera mantenimiento
         S->>S: Próximo mantenimiento = entrega + intervalo (RN-08)
