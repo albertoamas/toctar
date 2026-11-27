@@ -1,5 +1,5 @@
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
-import { consultar, crearClienteEnBase, crearCotizacionEnBase, crearUsuario, ingresar, ingresarComoDueno, PERFIL_TALLER, PNG, sinAdelantoEnReserva, marcarNuevo } from "./apoyo";
+import { consultar, crearClienteEnBase, crearCotizacionEnBase, crearUsuario, ingresar, ingresarComoDueno, PERFIL_TALLER, PNG, sinAdelantoEnReserva, marcarNuevo, rutaDeVehiculo } from "./apoyo";
 
 // Cotización directa (pedido 23, flujo crítico 1; antes HU-24 y HU-25). Especificación:
 // docs/08-desarrollo/etapas/P23-cotizacion-directa.md §9. Cada proyecto (celular o escritorio) crea su propio servicio
@@ -303,13 +303,14 @@ test("un WhatsApp repetido avisa y ofrece cotizarle a ese cliente; lo escrito se
   expect(await consultar("select 1 from consulta where interesado_nombre = $1", [`Repetido ${s}`])).toEqual([]);
 });
 
-test("desde la ficha del cliente: llega elegido, con su vehículo marcado, y la cotización queda en su ficha", async ({ page }, info) => {
+test("desde la ficha del cliente: llega elegido, con su vehículo marcado, y la cotización queda en la de su vehículo", async ({ page }, info) => {
   const s = sufijo(info);
   const nombre = `Cotizable ${s}`;
   const id = await crearClienteEnBase({ nombre: `Desde ficha ${s}`, telefono: telefono(info, 3), placa: `CF25${s}1` });
   await ingresarComoDueno(page);
   await page.goto(`/panel/clientes/${id}`);
-  await expect(page.getByText("Todavía no tiene trabajos ni cotizaciones.")).toBeVisible();
+  // Su vehículo, todavía sin trabajos: solo sus datos
+  await expect(page.getByRole("list", { name: "Vehículos", exact: true })).not.toContainText("Último trabajo");
   await page.getByRole("link", { name: "Nueva cotización" }).click();
   await expect(page).toHaveURL(new RegExp(`/panel/cotizaciones/nueva\\?cliente=${id}(?:[?&]volver=[^&#]*)?$`));
   await expect(page.getByRole("region", { name: "Cotización para" })).toContainText(`Desde ficha ${s}`);
@@ -324,8 +325,8 @@ test("desde la ficha del cliente: llega elegido, con su vehículo marcado, y la 
   await expect(page).toHaveURL(/\/panel\/cotizaciones\/\d+\?creada=1(?:[?&]volver=[^&#]*)?$/);
   await expect(page.getByRole("region", { name: "Precio" })).toContainText("En persona");
 
-  await page.goto(`/panel/clientes/${id}`);
-  // Con un solo vehículo, la fila sin la placa (26/11): la cotización
+  // En la historia de su vehículo (26/11: ya no en la ficha del cliente)
+  await page.goto(await rutaDeVehiculo(`CF25${s}1`));
   await expect(page.getByRole("list", { name: "Historia" }).getByRole("link").filter({ hasText: /^Cotización/ })).toBeVisible();
 });
 

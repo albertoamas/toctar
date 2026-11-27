@@ -9,7 +9,6 @@ import { AvisoFlotante } from "@/componentes/panel/aviso-flotante";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { TextoAccion } from "@/componentes/panel/texto-accion";
-import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { ListaDatos } from "@/componentes/panel/lista-datos";
 import { SeccionConEditar } from "@/componentes/panel/seccion-con-editar";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
@@ -27,14 +26,11 @@ import { VehiculosCliente } from "@/modulos/clientes/componentes/vehiculos-clien
 import { catalogoVehiculos, obtenerCliente } from "@/modulos/clientes/consultas";
 import { obtenerParametros, tamanosActivos } from "@/modulos/configuracion/consultas";
 import { cotizacionesDelCliente } from "@/modulos/cotizaciones/consultas/lista";
-import { ListaMantenimientos } from "@/modulos/mantenimientos/componentes/lista-mantenimientos";
-import { AgregarMantenimiento } from "@/modulos/mantenimientos/componentes/planes";
-import { mantenimientosDelCliente, serviciosConMantenimiento } from "@/modulos/mantenimientos/consultas";
+import { mantenimientosDelCliente } from "@/modulos/mantenimientos/consultas";
 import { Insignia } from "@/componentes/panel/insignia";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { aqui, conDesde, volverDesde } from "@/lib/volver";
-import { LineaDeTiempo } from "@/componentes/panel/linea-de-tiempo";
-import { HISTORIA_CORTA, historia } from "@/modulos/clientes/componentes/historia";
+import { resumenDeVehiculo } from "@/modulos/clientes/resumen-vehiculos";
 
 export const metadata: Metadata = { title: "Cliente" };
 
@@ -42,6 +38,7 @@ export const metadata: Metadata = { title: "Cliente" };
 // si quien entra tiene el módulo. HU-32: sus reservas, con el saldo de cada una para quien ve pagos; desde C4 son también sus
 // órdenes, con su estado. HU-38: sus mantenimientos programados, para quien tiene "Mantenimientos". Pedido 21: sus planes
 // (cada cuántos meses), agregar uno hecho antes del sistema y, en el menú "Más" de cada uno, editarlo o terminarlo.
+// 26/11 (recorrido visual): la persona y sus autos; la historia y los mantenimientos, en la ficha de cada vehículo.
 // Pulido 8.3 (skill pantallas-panel): una ficha en lectura. Arriba, quién es, lo que debe y cómo escribirle (desactivar,
 // en "Más"); vehículos y datos lado a lado, cada uno editado en un modal; después reservas, cotizaciones y mantenimientos.
 export default function PaginaCliente({ params, searchParams }: PageProps<"/panel/clientes/[id]">) {
@@ -66,9 +63,7 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
   const verAgenda = puedeVerModulo(usuario, "agenda");
   const verPagos = puedeVerModulo(usuario, "pagos");
   const verMantenimientos = puedeVerModulo(usuario, "mantenimientos");
-  // Una reserva ya recibida se abre en su orden, si quien mira ve órdenes
-  const verOrdenes = puedeVerModulo(usuario, "ordenes");
-  const [c, tamanos, catalogo, cotizaciones, parametros, reservas, mantenimientos, conMantenimiento] = await Promise.all([
+  const [c, tamanos, catalogo, cotizaciones, parametros, reservas, mantenimientos] = await Promise.all([
     obtenerCliente(numero),
     tamanosActivos(),
     catalogoVehiculos(),
@@ -77,7 +72,6 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
     // Con Pagos también sin Agenda: de ahí sale lo que debe (la lista de reservas es de Agenda)
     verAgenda || verPagos ? reservasDelCliente(numero, verPagos) : [],
     verMantenimientos ? mantenimientosDelCliente(numero) : [],
-    verMantenimientos ? serviciosConMantenimiento() : [],
   ]);
   if (!c) notFound();
   // Pedido 43: "Volver" a la pantalla de la que se vino; los enlaces que salen de aquí dicen que vienen de este cliente
@@ -85,20 +79,21 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
   const desdeAqui = aqui(`/panel/clientes/${c.id}`, busqueda);
 
   const debe = saldoPendiente(reservas);
-  // La historia: las reservas con la Agenda, las cotizaciones con Cotizaciones (RN-12: los montos, a quien los ve)
-  const conHistoria = verAgenda || verCotizaciones;
-  const todaLaHistoria = busqueda.historia === "todo";
-  const hitos = historia({
-    reservas: verAgenda ? reservas : null,
-    cotizaciones: verCotizaciones ? cotizaciones : null,
-    verOrdenes,
-    conSaldo: verPagos,
-    umbral: parametros.dias_cotizacion_sin_respuesta,
-    desde: desdeAqui,
-    variosVehiculos: c.vehiculos.length > 1,
-  });
+  // Cada vehículo con su último trabajo, su próximo mantenimiento y lo que pide atención (26/11): la historia y los
+  // mantenimientos viven en la ficha de cada vehículo. Cada parte, solo para quien ve su módulo
   const hoy = fechaEnBolivia();
-  const vehiculosActivos = c.vehiculos.filter((v) => v.activo).map((v) => ({ id: v.id, placa: v.placa }));
+  const resumen = Object.fromEntries(
+    c.vehiculos.map((v) => [
+      v.id,
+      resumenDeVehiculo(v.placa, {
+        reservas: verAgenda ? reservas : null,
+        mantenimientos: verMantenimientos ? mantenimientos : null,
+        cotizaciones: verCotizaciones ? cotizaciones : null,
+        umbral: parametros.dias_cotizacion_sin_respuesta,
+        hoy,
+      }),
+    ]),
+  );
   // Sin el WhatsApp (26/11): ya está debajo del nombre y en "Escribir por WhatsApp" (se edita en "Editar")
   const datos: [string, string | null][] = [
     ["Correo", c.correo],
@@ -170,80 +165,37 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
         <AvisoFlotante mensaje={`${recibido} ahora es de ${c.nombre}, con su plan de mantenimiento.`} />
       )}
 
-      {/* C7 §5.6 (18/11): la historia (reservas, órdenes y cotizaciones en una sola lista, lo más reciente arriba) y los
-          mantenimientos a la izquierda; los vehículos y los datos al costado. En el celular: la historia, los vehículos y
-          los datos, y los mantenimientos */}
+      {/* La persona y sus autos (26/11, recorrido visual): los vehículos, con lo de cada uno, y al costado sus datos. La
+          historia y los mantenimientos, en la ficha de cada vehículo (antes, repetidos aquí y allá) */}
       <div className="grid items-start gap-8 gap-x-4 @4xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        {conHistoria && (
-          <Seccion
-            id="historia"
-            titulo="Historia"
-            sinRelleno
-            className="@4xl:col-start-1 @4xl:row-start-1"
-          >
-            <LineaDeTiempo
-              hitos={hitos}
-              hoy={fechaEnBolivia()}
-              corta={todaLaHistoria ? undefined : HISTORIA_CORTA}
-              verTodo={conDesde(`/panel/clientes/${c.id}?historia=todo`, typeof busqueda.volver === "string" ? busqueda.volver : null)}
-              vacio="Todavía no tiene trabajos ni cotizaciones."
-            />
-          </Seccion>
-        )}
-
-        <div className="flex min-w-0 flex-col gap-8 @4xl:col-start-2 @4xl:row-span-2 @4xl:row-start-1">
-          <VehiculosCliente clienteId={c.id} vehiculos={c.vehiculos} tamanos={tamanos} catalogo={catalogo} desde={desdeAqui} />
-          <SeccionConEditar
-            id="datos"
-            titulo="Datos"
-            etiquetaEditar="Editar datos del cliente"
-            tituloModal="Datos del cliente"
-            lectura={
-              // Solo lo que tiene valor: un dato vacío no ocupa una fila (se carga desde "Editar")
-              conValores.length === 0 ? (
-                <p className="text-tinta-suave">Sin correo, NIT ni notas.</p>
-              ) : (
-                // La lista de datos de todo el panel (26/11; antes, una armada aquí, sin las líneas entre dato y dato)
-                <ListaDatos nombre="Datos del cliente" filas={conValores.map(([etiqueta, valor]) => [etiqueta, <span key={etiqueta} className="whitespace-pre-line">{valor}</span>])} />
-              )
-            }
-          >
-            <FormularioDatosCliente
-              id={c.id}
-              iniciales={{
-                nombre: c.nombre,
-                telefono: whatsAppLocal(c.telefono),
-                correo: c.correo ?? "",
-                nit: c.nit ?? "",
-                razonSocial: c.razonSocial ?? "",
-                notas: c.notas ?? "",
-              }}
-            />
-          </SeccionConEditar>
-        </div>
-
-        <div className="flex min-w-0 flex-col gap-8 empty:hidden @4xl:col-start-1 @4xl:row-start-2">
-          {verMantenimientos && (
-            <Seccion
-              id="mantenimientos" titulo="Mantenimientos"
-              sinRelleno
-              accion={
-                <>
-                  {/* Un servicio hecho antes del sistema: con un vehículo activo y algún servicio que programe mantenimiento */}
-                  {c.activo && vehiculosActivos.length > 0 && conMantenimiento.length > 0 && (
-                    <AgregarMantenimiento clienteId={c.id} vehiculos={vehiculosActivos} servicios={conMantenimiento} hoy={hoy} />
-                  )}
-                </>
-              }
-            >
-              {mantenimientos.length === 0 ? (
-                <p className="px-4 py-3 text-tinta-suave">No tiene mantenimientos programados.</p>
-              ) : (
-                <ListaMantenimientos mantenimientos={mantenimientos} editables={c.activo} ve={{ ordenes: verOrdenes, agenda: verAgenda }} desde={desdeAqui} hoy={hoy} conPlaca={c.vehiculos.length > 1} />
-              )}
-            </Seccion>
-          )}
-        </div>
+        <VehiculosCliente clienteId={c.id} vehiculos={c.vehiculos} tamanos={tamanos} catalogo={catalogo} desde={desdeAqui} resumen={resumen} />
+        <SeccionConEditar
+          id="datos"
+          titulo="Datos"
+          etiquetaEditar="Editar datos del cliente"
+          tituloModal="Datos del cliente"
+          lectura={
+            // Solo lo que tiene valor: un dato vacío no ocupa una fila (se carga desde "Editar")
+            conValores.length === 0 ? (
+              <p className="text-tinta-suave">Sin correo, NIT ni notas.</p>
+            ) : (
+              // La lista de datos de todo el panel (26/11; antes, una armada aquí, sin las líneas entre dato y dato)
+              <ListaDatos nombre="Datos del cliente" filas={conValores.map(([etiqueta, valor]) => [etiqueta, <span key={etiqueta} className="whitespace-pre-line">{valor}</span>])} />
+            )
+          }
+        >
+          <FormularioDatosCliente
+            id={c.id}
+            iniciales={{
+              nombre: c.nombre,
+              telefono: whatsAppLocal(c.telefono),
+              correo: c.correo ?? "",
+              nit: c.nit ?? "",
+              razonSocial: c.razonSocial ?? "",
+              notas: c.notas ?? "",
+            }}
+          />
+        </SeccionConEditar>
       </div>
     </>
   );

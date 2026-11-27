@@ -15,12 +15,21 @@ import { cambiarEstadoVehiculo } from "../acciones";
 // del modal de edición. Desactivar pide confirmación, con lo que pasa (skill pantallas-panel: lo que no se deshace a la
 // vista). Inactivo, "Reactivar vehículo" es la acción principal, como en la ficha de un cliente o un servicio.
 
-type Props = { clienteId: number; vehiculoId: number; placa: string; activo: boolean; cambiarDueno: Route };
+type Props = {
+  clienteId: number;
+  vehiculoId: number;
+  placa: string;
+  activo: boolean;
+  cambiarDueno: Route;
+  /** El formulario para editarlo (26/11: antes, "Editar" de una tarjeta "Datos" que repetía el subtítulo). */
+  editar: React.ReactNode;
+};
 
-export function MasVehiculo({ clienteId, vehiculoId, placa, activo, cambiarDueno }: Props) {
+export function MasVehiculo({ clienteId, vehiculoId, placa, activo, cambiarDueno, editar }: Props) {
   const hidratado = useHidratado();
   const [reactivando, iniciar] = useTransition();
   const [desactivando, setDesactivando] = useState(false);
+  const [editando, setEditando] = useState(false);
   if (!activo) {
     return (
       <Button
@@ -36,10 +45,14 @@ export function MasVehiculo({ clienteId, vehiculoId, placa, activo, cambiarDueno
     <>
       <MenuMas
         acciones={[
+          { texto: "Editar vehículo", alElegir: () => setEditando(true) },
           { texto: "Cambiar de dueño", href: cambiarDueno, mismaPestana: true },
           { texto: "Desactivar vehículo", alElegir: () => setDesactivando(true) },
         ]}
       />
+      <ModalFormulario titulo={`Editar ${placa}`} abierto={editando} alCambiar={setEditando}>
+        {editar}
+      </ModalFormulario>
       <ModalFormulario titulo={`¿Desactivar ${placa}?`} abierto={desactivando} alCambiar={setDesactivando}>
         <Desactivar clienteId={clienteId} vehiculoId={vehiculoId} />
       </ModalFormulario>

@@ -10,9 +10,7 @@ import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { ListaFilas } from "@/componentes/panel/fila-lista";
 import { Insignia } from "@/componentes/panel/insignia";
-import { ListaDatos } from "@/componentes/panel/lista-datos";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
-import { SeccionConEditar } from "@/componentes/panel/seccion-con-editar";
 import { buttonVariants } from "@/componentes/ui/button";
 import { fechaEnBolivia } from "@/lib/fechas";
 import { puede, puedeVerModulo } from "@/lib/permisos";
@@ -24,11 +22,12 @@ import { FotoVehiculo } from "@/modulos/clientes/componentes/foto-vehiculo";
 import { MasVehiculo } from "@/modulos/clientes/componentes/mas-vehiculo";
 import { FormularioVehiculo } from "@/modulos/clientes/componentes/vehiculos-cliente";
 import { catalogoVehiculos, fichaVehiculo } from "@/modulos/clientes/consultas";
-import { detalleVehiculo, nombreVehiculo, rutaVehiculo } from "@/modulos/clientes/reglas";
+import { detalleVehiculo, rutaVehiculo } from "@/modulos/clientes/reglas";
 import { obtenerParametros, tamanosActivos } from "@/modulos/configuracion/consultas";
 import { cotizacionesDelVehiculo } from "@/modulos/cotizaciones/consultas/lista";
 import { ListaMantenimientos } from "@/modulos/mantenimientos/componentes/lista-mantenimientos";
-import { mantenimientosDelVehiculo } from "@/modulos/mantenimientos/consultas";
+import { mantenimientosDelVehiculo, serviciosConMantenimiento } from "@/modulos/mantenimientos/consultas";
+import { AgregarMantenimiento } from "@/modulos/mantenimientos/componentes/planes";
 import { LineaDeTiempo } from "@/componentes/panel/linea-de-tiempo";
 import { HISTORIA_CORTA, historia } from "@/modulos/clientes/componentes/historia";
 
@@ -72,13 +71,14 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
   const verOrdenes = puedeVerModulo(usuario, "ordenes");
   const verCotizaciones = puedeVerModulo(usuario, "cotizaciones");
   const verMantenimientos = puedeVerModulo(usuario, "mantenimientos");
-  const [tamanos, catalogo, reservas, cotizaciones, mantenimientos, parametros] = await Promise.all([
+  const [tamanos, catalogo, reservas, cotizaciones, mantenimientos, parametros, conMantenimiento] = await Promise.all([
     tamanosActivos(),
     catalogoVehiculos(),
     verAgenda ? reservasDelVehiculo(v.id, verPagos) : [],
     verCotizaciones ? cotizacionesDelVehiculo(v.id) : [],
     verMantenimientos ? mantenimientosDelVehiculo(v.id) : [],
     verCotizaciones ? obtenerParametros() : null,
+    verMantenimientos ? serviciosConMantenimiento() : [],
   ]);
 
   const fichaCliente = `/panel/clientes/${v.dueno.id}`;
@@ -112,7 +112,9 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
         // Su foto, para saber cuál es (pedido 58)
         imagen={<FotoVehiculo foto={v.foto} placa={v.placa} />}
         // Qué vehículo es y de quién (C7, 18/11), como en el prototipo
-        subtitulo={[detalle.join(" "), `de ${v.dueno.nombre}`].filter(Boolean).join(" · ")}
+        // Todo el auto (26/11): sus datos y su tamaño. El dueño, en su tarjeta (antes también aquí, y los datos otra vez
+        // en una tarjeta "Datos"); se editan en "Más"
+        subtitulo={[detalle.join(" "), `Tamaño: ${v.tamano}`].filter(Boolean).join(" · ")}
         estado={!v.activo && <Insignia>Desactivado</Insignia>}
         accion={
           <div className="flex flex-wrap gap-2">
@@ -136,6 +138,7 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
               placa={v.placa}
               activo={v.activo}
               cambiarDueno={conDesde(`${rutaVehiculo(v.dueno.id, v.id)}/dueno`, desdeAqui)}
+              editar={<FormularioVehiculo clienteId={v.dueno.id} vehiculo={v} tamanos={tamanos} catalogo={catalogo} />}
             />
           </div>
         }
@@ -158,8 +161,29 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
           </Seccion>
         )}
 
-        {/* Al costado: el dueño primero (26/11: al final, en el celular había que bajar todo para escribirle), los
-            mantenimientos y los datos */}
+        {/* Debajo de la historia, sus mantenimientos (26/11: ya no en la ficha del cliente), con "Agregar" un servicio hecho
+            antes del sistema, sin preguntar de qué vehículo */}
+        {verMantenimientos && (
+          <Seccion
+            id="mantenimiento"
+            titulo="Mantenimientos"
+            sinRelleno
+            className="@4xl:col-start-1 @4xl:row-start-2"
+            accion={
+              v.activo &&
+              v.dueno.activo &&
+              conMantenimiento.length > 0 && <AgregarMantenimiento clienteId={v.dueno.id} vehiculos={[{ id: v.id, placa: v.placa }]} servicios={conMantenimiento} hoy={fechaEnBolivia()} />
+            }
+          >
+            {mantenimientos.length === 0 ? (
+              <p className="px-4 py-3 text-tinta-suave">No tiene mantenimientos programados.</p>
+            ) : (
+              <ListaMantenimientos mantenimientos={mantenimientos} editables={v.dueno.activo} ve={{ ordenes: verOrdenes, agenda: verAgenda }} desde={desdeAqui} hoy={fechaEnBolivia()} conPlaca={false} />
+            )}
+          </Seccion>
+        )}
+
+        {/* Al costado, su dueño: toda la fila lleva a su ficha (en el celular, debajo de la historia) */}
         <div className="flex min-w-0 flex-col gap-8 @4xl:col-start-2 @4xl:row-start-1">
           <Seccion id="dueno" titulo="Dueño" sinRelleno>
             <ListaFilas
@@ -174,43 +198,6 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
               ]}
             />
           </Seccion>
-          {verMantenimientos && (
-            <Seccion id="mantenimiento" titulo="Mantenimientos" sinRelleno>
-              {mantenimientos.length === 0 ? (
-                <p className="px-4 py-3 text-tinta-suave">No tiene mantenimiento programado.</p>
-              ) : (
-                <ListaMantenimientos
-                  mantenimientos={mantenimientos}
-                  editables={v.dueno.activo}
-                  ve={{ ordenes: verOrdenes, agenda: verAgenda }}
-                  desde={desdeAqui}
-                  hoy={fechaEnBolivia()}
-                  conPlaca={false}
-                />
-              )}
-            </Seccion>
-          )}
-          <SeccionConEditar
-            id="datos"
-            titulo="Datos"
-            etiquetaEditar={`Editar ${v.placa}`}
-            tituloModal={`Editar ${v.placa}`}
-            lectura={
-              <ListaDatos
-                nombre="Datos del vehículo"
-                // Cada dato en su fila (26/11: "Vehículo" repetía el subtítulo); solo los que tienen valor
-                filas={[
-                  ["Tamaño", v.tamano],
-                  !!nombreVehiculo(v) && ["Marca y modelo", nombreVehiculo(v)],
-                  !!v.anio && ["Año", String(v.anio)],
-                  !!v.color?.trim() && ["Color", v.color.trim()],
-                ]}
-              />
-            }
-          >
-            <FormularioVehiculo clienteId={v.dueno.id} vehiculo={v} tamanos={tamanos} catalogo={catalogo} />
-          </SeccionConEditar>
-
         </div>
       </div>
     </>

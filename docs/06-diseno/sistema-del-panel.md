@@ -44,6 +44,7 @@ espacio, sin tope, también en un monitor grande. El tipo decide la forma y la s
 | **Lista de acciones** (cobrar, avisar) | Tabla con una columna de acciones (`TablaAcciones`) | Tarjetas con los botones abajo |
 | **Ficha de un trabajo** (cotización, reserva, orden) | Pasos del trabajo, el paso siguiente grande, secciones y "Más" | Lo mismo, apilado |
 | **Ficha editable** | Secciones en tarjetas, de a dos (`PartesIguales`); "Editar" abre un modal | Una columna; el modal sube desde abajo |
+| **Cliente y vehículo** (26/11) | Cada dato en una sola ficha: el cliente es la persona y sus autos (cada vehículo con su último trabajo, su próximo mantenimiento y lo que pide atención) y sus datos; el vehículo, su historia, sus mantenimientos y su dueño, con «Editar vehículo» en «Más» | Lo mismo, apilado |
 | **Crear o un paso del taller** | Formulario a todo el ancho, con sus partes lado a lado si son dos; en pasos si hace falta, botón al pie (`PieFormulario`). En los formularios en pasos con montos (Nueva cotización, Nueva versión, Nueva reserva), lo elegido y el total al costado (`ConResumen`, C7 §5.2); en Nuevo cliente, «Así queda», que se llena mientras se escribe (26/11) | Igual, con el botón fijo abajo y el total al lado |
 | **Portada** | Tarjetas para elegir a dónde ir | Una debajo de la otra |
 

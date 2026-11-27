@@ -1,5 +1,5 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import { crearClienteEnBase, crearCotizacionEnBase, crearOrdenLista, ingresarComoDueno } from "./apoyo";
+import { crearClienteEnBase, crearCotizacionEnBase, crearOrdenLista, ingresarComoDueno, editarVehiculo } from "./apoyo";
 
 // HU-23 Ficha del cliente. Especificación: docs/08-desarrollo/etapas/C1-catalogo-clientes.md §9.
 // Cada proyecto (celular o escritorio) usa sus propios teléfonos y placas, y cada reintento los suyos: con los mismos, el
@@ -83,18 +83,17 @@ test("los vehículos se agregan en la ficha del cliente y se editan, desactivan 
   // Tocar el vehículo abre su ficha (pedido 51): ahí se edita
   await vehiculos.getByRole("link", { name: new RegExp(`FIC${s}1`) }).click();
   await expect(page.getByRole("heading", { level: 1, name: `FIC${s}1` })).toBeVisible();
-  const datos = page.getByRole("region", { name: "Datos" });
-  // Editar: marca, modelo, año y color están plegados porque el vehículo no los tiene
-  await page.getByRole("button", { name: `Editar FIC${s}1` }).click();
-  const edicion = page.getByRole("dialog", { name: `Editar FIC${s}1` });
+  // Editar, desde "Más" (26/11): marca, modelo, año y color están plegados porque el vehículo no los tiene
+  const edicion = await editarVehiculo(page, `FIC${s}1`);
   await edicion.getByText("Agregar marca, modelo, año y color").click();
   // El color, escrito (20/11)
   await edicion.getByLabel("Color").fill("Rojo");
   await edicion.getByRole("button", { name: "Guardar vehículo" }).click();
   await expect(edicion).toBeHidden();
-  await expect(datos).toContainText("Rojo");
+  // Se ve debajo de la placa (26/11: ya sin la tarjeta "Datos")
+  await expect(page.getByRole("main").getByText(/Rojo/).first()).toBeVisible();
   // Al volver a abrirlo trae lo guardado, ya desplegado
-  await page.getByRole("button", { name: `Editar FIC${s}1` }).click();
+  await editarVehiculo(page, `FIC${s}1`);
   await expect(edicion.getByLabel("Color")).toHaveValue("Rojo");
   // Al editar, cerrarlo es "Listo" y no borra lo guardado (pulido final del 10/11: "Quitar" lo habría vaciado)
   await expect(edicion.getByRole("button", { name: /^Quitar/ })).toHaveCount(0);
@@ -158,7 +157,7 @@ test("un cliente se desactiva desde «Más» con confirmación, deja de salir en
   await expect(page.getByRole("link", { name: nombre })).toBeVisible();
 });
 
-test("la historia junta reservas y cotizaciones; con un solo vehículo, sin la placa en cada fila", async ({ page }, info) => {
+test("la ficha del cliente dice lo de cada vehículo; su historia, en la ficha del vehículo, sin la placa en cada fila", async ({ page }, info) => {
   const s = sufijo(info);
   // Días lejos de hoy y propios de cada proyecto y reintento: no se mezclan con otras pruebas
   const dias = 1700 + (info.project.name === "celular" ? 0 : 10) + info.retry * 2;
@@ -167,8 +166,12 @@ test("la historia junta reservas y cotizaciones; con un solo vehículo, sin la p
   await crearOrdenLista({ placa: `DA23${s}1`, dias, precio: 500, pagado: 100 });
   await ingresarComoDueno(page);
   await page.goto(`/panel/clientes/${id}`);
-  // Una sola historia (C7 §5.6): la cotización y la orden. Con un solo vehículo, sin la placa en cada fila (26/11: se
-  // repetía igual en todas, con la tarjeta de Vehículos al lado; antes, inventario-pantallas.md, cambio 4)
+  // La ficha del cliente (26/11): sin historia; cada vehículo dice su último trabajo
+  await expect(page.getByRole("list", { name: "Historia" })).toHaveCount(0);
+  const vehiculo = page.getByRole("list", { name: "Vehículos", exact: true }).getByRole("link", { name: new RegExp(`DA23${s}1`) });
+  await expect(vehiculo).toContainText("Último trabajo:");
+  // La historia, en la ficha del vehículo (C7 §5.6): la cotización y la orden, sin la placa en cada fila (es la del título)
+  await vehiculo.click();
   const historia = page.getByRole("list", { name: "Historia" }).getByRole("link");
   await expect(historia).toHaveCount(2);
   const cotizacion = historia.filter({ hasText: `2023-${s}71` });
